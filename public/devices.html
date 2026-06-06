@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Devices — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .lang-switch-top {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .35rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+    .lang-switch-top:hover { background: var(--sidebar-bg); color: #fff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-laptop-code"></i><span data-i18n="smartLab">Smart Lab</span></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard.html"   data-roles="admin,technician"><i class="fas fa-gauge-high"></i> <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/devices.html"     class="nav-item" data-page="devices.html"     data-roles="admin,technician"><i class="fas fa-desktop"></i> <span data-i18n="devices">Devices</span></a>
+      <a href="/issues.html"      class="nav-item" data-page="issues.html"      data-roles="admin,technician,user"><i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span></a>
+      <a href="/maintenance.html" class="nav-item" data-page="maintenance.html" data-roles="admin,technician"><i class="fas fa-screwdriver-wrench"></i> <span data-i18n="maintenance">Maintenance</span></a>
+      <a href="/map.html"         class="nav-item" data-page="map.html"         data-roles="admin,technician"><i class="fas fa-map"></i> <span data-i18n="map">Map</span></a>
+      <a href="/alerts.html"      class="nav-item" data-page="alerts.html"      data-roles="admin,technician"><i class="fas fa-bell"></i> <span data-i18n="alerts">Alerts</span></a>
+      <a href="/ai.html"          class="nav-item" data-page="ai.html"          data-roles="admin,technician,user"><i class="fas fa-robot"></i> <span data-i18n="aiAssistant">AI Assistant</span></a>
+      <a href="/reports.html"     class="nav-item" data-page="reports.html"     data-roles="admin,technician"><i class="fas fa-chart-bar"></i> <span data-i18n="reports">Reports</span></a>
+      <a href="/admin.html"       class="nav-item" data-page="admin.html" id="admin-link" data-roles="admin"><i class="fas fa-users-cog"></i> <span data-i18n="users">Users</span></a>
+    </nav>
+    <div class="sidebar-footer" data-i18n="footerText">Smart Lab &copy; 2026</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title" data-i18n="devices">Devices</span>
+    <div class="topbar-actions">
+      <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <div class="alert-bell" onclick="window.location='/alerts.html'" data-i18n-title="alerts"><i class="fas fa-bell"></i><span class="badge-count" id="unread-count" style="display:none">0</span></div>
+      <div class="topbar-user"><div class="avatar" id="user-avatar">U</div><span id="user-name" data-i18n="user">User</span></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h2 class="page-title" data-i18n="deviceManagement">Device Management</h2>
+      <button class="btn btn-primary" id="add-btn"><i class="fas fa-plus"></i> <span data-i18n="addDevice">Add Device</span></button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="margin-bottom:1rem;padding:.85rem 1.25rem">
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+        <input id="search-inp" class="form-control" placeholder="Search by device name..." data-i18n-placeholder="searchPlaceholder" style="max-width:220px" />
+        <select id="status-filter" class="form-control" style="max-width:160px">
+          <option value="" data-i18n="allStatuses">All Statuses</option>
+          <option value="working" data-i18n="working">Working</option>
+          <option value="broken" data-i18n="broken">Broken</option>
+          <option value="maintenance" data-i18n="maintenance">Maintenance</option>
+        </select>
+        <button class="btn btn-outline btn-sm" id="refresh-btn"><i class="fas fa-rotate-right"></i> <span data-i18n="refresh">Refresh</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th data-i18n="deviceName">Device Name</th><th data-i18n="type">Type</th><th data-i18n="processor">Processor</th><th data-i18n="ram">RAM</th>
+              <th data-i18n="status">Status</th><th data-i18n="lastMaintenance">Last Maintenance</th><th data-i18n="actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="devices-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:2rem"><i class="fas fa-spinner fa-spin"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </main>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay hidden" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span id="modal-title" data-i18n="addNewDevice">Add New Device</span>
+        <button class="modal-close" id="modal-close" data-i18n-title="close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="device-form">
+          <input type="hidden" id="edit-id" />
+          <div class="grid grid-2">
+            <div class="form-group"><label class="form-label" data-i18n="deviceNameRequired">Device Name *</label><input class="form-control" id="f-name" required /></div>
+            <div class="form-group"><label class="form-label" data-i18n="typeRequired">Type *</label><input class="form-control" id="f-type" required /></div>
+            <div class="form-group"><label class="form-label" data-i18n="processor">Processor</label><input class="form-control" id="f-processor" /></div>
+            <div class="form-group"><label class="form-label" data-i18n="ram">RAM</label><input class="form-control" id="f-ram" /></div>
+            <div class="form-group"><label class="form-label" data-i18n="operatingSystem">Operating System</label><input class="form-control" id="f-os" /></div>
+            <div class="form-group"><label class="form-label" data-i18n="locationX">Location X</label><input class="form-control" id="f-x" type="number" min="0" value="0" /></div>
+            <div class="form-group"><label class="form-label" data-i18n="locationY">Location Y</label><input class="form-control" id="f-y" type="number" min="0" value="0" /></div>
+            <div class="form-group"><label class="form-label" data-i18n="ageYears">Age (Years)</label><input class="form-control" id="f-age" type="number" step="0.1" value="0" /></div>
+            <div class="form-group"><label class="form-label" data-i18n="status">Status</label>
+              <select class="form-control" id="f-status">
+                <option value="working" data-i18n="working">Working</option>
+                <option value="broken" data-i18n="broken">Broken</option>
+                <option value="maintenance" data-i18n="maintenance">Maintenance</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label" data-i18n="purchaseDate">Purchase Date</label><input class="form-control" id="f-purchase" type="date" /></div>
+            <div class="form-group"><label class="form-label" data-i18n="lastMaintenance">Last Maintenance</label><input class="form-control" id="f-maint" type="date" /></div>
+          </div>
+          <div class="form-group"><label class="form-label" data-i18n="notes">Notes</label><textarea class="form-control" id="f-notes"></textarea></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="modal-cancel" data-i18n="cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-save"><i class="fas fa-save"></i> <span data-i18n="save">Save</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireAuth, apiGet, apiPost, apiPut, apiDel, fillTopbar, setActiveNav, logout, toast, formatDate, debounce, filterSidebar } from '/js/api.js';
+    import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
+
+    const user = requireAuth(); if (!user) throw new Error('stop');
+    if (user.role === 'user') { window.location.href = '/issues.html'; throw new Error('stop'); }
+    fillTopbar(); setActiveNav();
+    applyTranslations();
+    filterSidebar();
+    if (user.role !== 'admin') document.getElementById('add-btn').style.display='none';
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const next = getLang() === 'ar' ? 'en' : 'ar';
+      setLanguage(next);
+    });
+
+    const STATUS_MAP = { working:'badge-working', broken:'badge-broken', maintenance:'badge-maintenance' };
+    // i18n keys: working, broken, maintenance (status labels)
+
+    let currentPage = 1;
+
+    async function loadDevices() {
+      const search = document.getElementById('search-inp').value;
+      const status = document.getElementById('status-filter').value;
+      const res = await apiGet(`/api/devices?page=${currentPage}&limit=10${status?'&status='+status:''}${search?'&search='+encodeURIComponent(search):''}`);
+
+      // Unread alerts badge
+      try { const a = await apiGet('/api/alerts?is_read=0'); if(a.unread>0){const el=document.getElementById('unread-count');el.textContent=a.unread;el.style.display='flex';} } catch{}
+
+      const tbody = document.getElementById('devices-tbody');
+      if (!res.devices.length) {
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-inbox"></i><p data-i18n="noDevicesFound">No devices found</p></div></td></tr>';
+      } else {
+        tbody.innerHTML = res.devices.map(d => `
+          <tr>
+            <td>${d.id}</td>
+            <td><a href="/device.html?id=${d.id}" style="color:var(--primary);font-weight:700">${d.name}</a></td>
+            <td>${d.type}</td>
+            <td>${d.processor||'—'}</td>
+            <td>${d.ram||'—'}</td>
+            <td><span class="badge ${STATUS_MAP[d.status]}" data-i18n="${d.status}">${t(d.status)}</span></td>
+            <td>${formatDate(d.last_maintenance)}</td>
+            <td>
+              <button class="btn btn-outline btn-sm btn-icon" onclick="openQr(${d.id},'${d.name}')" title="QR" data-i18n-title="qr"><i class="fas fa-qrcode"></i></button>
+              ${user.role==='admin'?`
+              <button class="btn btn-outline btn-sm btn-icon" onclick="openEdit(${d.id})" title="Edit" data-i18n-title="edit"><i class="fas fa-pen"></i></button>
+              <button class="btn btn-danger btn-sm btn-icon" onclick="delDevice(${d.id},'${d.name}')" title="Delete" data-i18n-title="delete"><i class="fas fa-trash"></i></button>
+              `:''}
+            </td>
+          </tr>`).join('');
+      }
+
+      // Pagination
+      buildPagination(res.total, res.limit);
+    }
+
+    function buildPagination(total, limit) {
+      const pages = Math.ceil(total / limit);
+      const parent = document.getElementById('pagination');
+      if (pages <= 1) { parent.innerHTML=''; return; }
+      let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="changePage(${currentPage-1})"><i class="fas fa-chevron-right"></i></button>`;
+      for (let i = 1; i <= pages; i++) html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
+      html += `<button class="page-btn" ${currentPage===pages?'disabled':''} onclick="changePage(${currentPage+1})"><i class="fas fa-chevron-left"></i></button>`;
+      parent.innerHTML = html;
+    }
+
+    window.changePage = (p) => { currentPage = p; loadDevices(); };
+
+    // Search debounce
+    document.getElementById('search-inp').addEventListener('input', debounce(() => { currentPage=1; loadDevices(); }, 500));
+    document.getElementById('status-filter').addEventListener('change', () => { currentPage=1; loadDevices(); });
+    document.getElementById('refresh-btn').addEventListener('click', loadDevices);
+
+    // Download QR
+    window.openQr = async (id, name) => {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch(`/api/devices/${id}/qr`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Unauthorized');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `QR-${name}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    };
+
+    // Modal
+    const overlay = document.getElementById('modal-overlay');
+    document.getElementById('add-btn').addEventListener('click', () => { clearForm(); document.getElementById('modal-title').textContent=t('addNewDevice'); overlay.classList.remove('hidden'); });
+    document.getElementById('modal-close').addEventListener('click', () => overlay.classList.add('hidden'));
+    document.getElementById('modal-cancel').addEventListener('click', () => overlay.classList.add('hidden'));
+
+    function clearForm() { document.getElementById('device-form').reset(); document.getElementById('edit-id').value=''; }
+
+    window.openEdit = async (id) => {
+      const res = await apiGet(`/api/devices/${id}`);
+      const d = res.device;
+      document.getElementById('edit-id').value       = d.id;
+      document.getElementById('f-name').value        = d.name;
+      document.getElementById('f-type').value        = d.type;
+      document.getElementById('f-processor').value   = d.processor||'';
+      document.getElementById('f-ram').value         = d.ram||'';
+      document.getElementById('f-os').value          = d.os||'';
+      document.getElementById('f-x').value           = d.location_x;
+      document.getElementById('f-y').value           = d.location_y;
+      document.getElementById('f-age').value         = d.age_years;
+      document.getElementById('f-status').value      = d.status;
+      document.getElementById('f-purchase').value    = d.purchase_date||'';
+      document.getElementById('f-maint').value       = d.last_maintenance||'';
+      document.getElementById('f-notes').value       = d.notes||'';
+      document.getElementById('modal-title').textContent = t('editDevice');
+      overlay.classList.remove('hidden');
+    };
+
+    document.getElementById('modal-save').addEventListener('click', async () => {
+      const id   = document.getElementById('edit-id').value;
+      const body = {
+        name: document.getElementById('f-name').value, type: document.getElementById('f-type').value,
+        processor: document.getElementById('f-processor').value, ram: document.getElementById('f-ram').value,
+        os: document.getElementById('f-os').value,
+        location_x: Number(document.getElementById('f-x').value), location_y: Number(document.getElementById('f-y').value),
+        age_years: parseFloat(document.getElementById('f-age').value)||0,
+        status: document.getElementById('f-status').value,
+        purchase_date: document.getElementById('f-purchase').value||null,
+        last_maintenance: document.getElementById('f-maint').value||null,
+        notes: document.getElementById('f-notes').value||null,
+      };
+      try {
+        if (id) await apiPut(`/api/devices/${id}`, body);
+        else    await apiPost('/api/devices', body);
+        overlay.classList.add('hidden');
+        toast(id?t('deviceUpdated'):t('deviceAdded'), 'success');
+        loadDevices();
+      } catch(e) { toast(e.message, 'error'); }
+    });
+
+    window.delDevice = async (id, name) => {
+      if (!confirm(t('confirmDeleteDevice'))) return;
+      try { await apiDel(`/api/devices/${id}`); toast(t('deleted'), 'success'); loadDevices(); }
+      catch(e) { toast(e.message, 'error'); }
+    };
+
+    window.addEventListener('languagechange', () => {
+      loadDevices();
+    });
+
+    loadDevices();
+  </script>
+</body>
+</html>

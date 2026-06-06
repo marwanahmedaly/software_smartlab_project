@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Device Details — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .lang-switch-top {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .35rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+    .lang-switch-top:hover { background: var(--sidebar-bg); color: #fff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-laptop-code"></i><span data-i18n="smartLab">Smart Lab</span></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard.html"   data-roles="admin,technician"><i class="fas fa-gauge-high"></i> <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/devices.html"     class="nav-item" data-page="devices.html"     data-roles="admin,technician"><i class="fas fa-desktop"></i> <span data-i18n="devices">Devices</span></a>
+      <a href="/issues.html"      class="nav-item" data-page="issues.html"      data-roles="admin,technician,user"><i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span></a>
+      <a href="/maintenance.html" class="nav-item" data-page="maintenance.html" data-roles="admin,technician"><i class="fas fa-screwdriver-wrench"></i> <span data-i18n="maintenance">Maintenance</span></a>
+      <a href="/map.html"         class="nav-item" data-page="map.html"         data-roles="admin,technician"><i class="fas fa-map"></i> <span data-i18n="map">Map</span></a>
+      <a href="/alerts.html"      class="nav-item" data-page="alerts.html"      data-roles="admin,technician"><i class="fas fa-bell"></i> <span data-i18n="alerts">Alerts</span></a>
+      <a href="/ai.html"          class="nav-item" data-page="ai.html"          data-roles="admin,technician,user"><i class="fas fa-robot"></i> <span data-i18n="aiAssistant">AI Assistant</span></a>
+      <a href="/reports.html"     class="nav-item" data-page="reports.html"     data-roles="admin,technician"><i class="fas fa-chart-bar"></i> <span data-i18n="reports">Reports</span></a>
+      <a href="/admin.html"       class="nav-item" data-page="admin.html" id="admin-link" data-roles="admin"><i class="fas fa-users-cog"></i> <span data-i18n="users">Users</span></a>
+    </nav>
+    <div class="sidebar-footer" data-i18n="footerText">Smart Lab &copy; 2026</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title" id="page-title" data-i18n="deviceDetails">Device Details</span>
+    <div class="topbar-actions">
+      <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <div class="alert-bell" onclick="window.location='/alerts.html'" data-i18n-title="alerts"><i class="fas fa-bell"></i><span class="badge-count" id="unread-count" style="display:none">0</span></div>
+      <div class="topbar-user"><div class="avatar" id="user-avatar">U</div><span id="user-name" data-i18n="user">User</span></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h2 class="page-title" id="device-title" data-i18n="loading">Loading...</h2>
+      <a href="/devices.html" class="btn btn-outline"><i class="fas fa-arrow-right"></i> <span data-i18n="backToDevices">Back to Devices</span></a>
+    </div>
+
+    <div id="device-content">
+      <div class="spinner"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { apiGet, apiPatch, apiPost, fillTopbar, setActiveNav, logout, toast, formatDate, filterSidebar } from '/js/api.js';
+    import { getToken, getUser } from '/js/api.js';
+    import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
+
+    fillTopbar(); setActiveNav();
+    applyTranslations();
+    filterSidebar();
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const next = getLang() === 'ar' ? 'en' : 'ar';
+      setLanguage(next);
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const deviceId = params.get('id');
+    const token    = params.get('token'); // QR access
+
+    const user    = getUser();
+    const isLogin = !!getToken();
+
+    // i18n keys for status: working, broken, maintenance
+    const STATUS_MAP  = { working:'badge-working', broken:'badge-broken', maintenance:'badge-maintenance' };
+    // i18n keys for issue status: open, inProgress, resolved
+    const ISSUE_MAP   = { open:'badge-open', in_progress:'badge-in_progress', resolved:'badge-resolved' };
+    // i18n keys for priority: low, medium, high
+
+    function renderDevice(data) {
+      const d = data.device;
+      const issues = data.recent_issues || [];
+      document.getElementById('device-title').textContent = d.name;
+      document.title = `${d.name} — Smart Lab`;
+
+      const canEdit = isLogin && user && ['admin','technician'].includes(user.role);
+
+      document.getElementById('device-content').innerHTML = `
+        <div class="grid grid-1-2" style="margin-bottom:1rem">
+          <!-- Details Card -->
+          <div class="card" style="align-self:start">
+            <div style="text-align:center;padding:1rem 0">
+              <i class="fas fa-desktop" style="font-size:4rem;color:var(--primary)"></i>
+              <div style="margin-top:.75rem">
+                <h3 style="font-size:1.4rem;font-weight:800">${d.name}</h3>
+                <span class="badge ${STATUS_MAP[d.status]}" style="margin-top:.3rem" data-i18n="${d.status}">${t(d.status)}</span>
+              </div>
+            </div>
+            <hr style="border-color:var(--border)" />
+            <div style="padding:.5rem 0">
+              ${row('Type', d.type, 'type')} ${row('Processor', d.processor, 'processor')} ${row('RAM', d.ram, 'ram')}
+              ${row('OS', d.os, 'os')}               ${row('Age', d.age_years ? d.age_years+' <span data-i18n="years">'+t('years')+'</span>' : null, 'age')}
+              ${row('Purchase Date', formatDate(d.purchase_date), 'purchaseDate')} ${row('Last Maintenance', formatDate(d.last_maintenance), 'lastMaintenance')}
+              ${d.notes ? row('Notes', d.notes, 'notes') : ''}
+            </div>
+            ${canEdit ? `
+            <div style="display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="window.location='/devices.html'"><i class="fas fa-pen"></i> <span data-i18n="edit">Edit</span></button>
+              <a href="/issues.html?device=${d.id}" class="btn btn-outline btn-sm"><i class="fas fa-triangle-exclamation"></i> <span data-i18n="reportIssue">Report Issue</span></a>
+              <button class="btn btn-outline btn-sm" onclick="downloadQr(${d.id},'${d.name}')"><i class="fas fa-qrcode"></i> <span data-i18n="qr">QR</span></button>
+            </div>
+            ${canEdit ? statusButtons(d.id, d.status) : ''}
+            ` : `<a href="/issues.html?device=${d.id}" class="btn btn-warning" style="width:100%;justify-content:center;margin-top:.5rem"><i class="fas fa-triangle-exclamation"></i> <span data-i18n="reportIssue">Report Issue</span></a>`}
+          </div>
+
+          <!-- Issue History -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><i class="fas fa-history" style="color:var(--danger)"></i> <span data-i18n="latestIssues">Latest Issues</span></span>
+              <a href="/issues.html?device=${d.id}" class="btn btn-outline btn-sm" data-i18n="showAll">Show All</a>
+            </div>
+            ${issues.length ? `
+            <div class="table-wrapper">
+              <table>
+                <thead><tr><th data-i18n="issueType">Issue Type</th><th data-i18n="priority">Priority</th><th data-i18n="status">Status</th><th data-i18n="date">Date</th></tr></thead>
+                <tbody>${issues.map(i=>`
+                  <tr>
+                    <td>${i.issue_type}</td>
+                    <td><span class="badge badge-${i.priority}" data-i18n="${i.priority}">${t(i.priority)}</span></td>
+                    <td><span class="badge ${ISSUE_MAP[i.status]}" data-i18n="${i.status}">${t(i.status)}</span></td>
+                    <td>${formatDate(i.created_at)}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>` : '<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--success)"></i><p data-i18n="noIssuesFound">No issues found</p></div>'}
+          </div>
+        </div>`;
+    }
+
+    function row(label, val, key) {
+      if (!val || val === '—') return '';
+      return `<div style="display:flex;justify-content:space-between;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.9rem"><span style="color:var(--text-muted)" data-i18n="${key}">${label}</span><span style="font-weight:600">${val}</span></div>`;
+    }
+
+    function statusButtons(id, current) {
+      const opts = [{v:'working',k:'statusWorking'},{v:'broken',k:'statusBroken'},{v:'maintenance',k:'statusMaintenance'}].filter(o=>o.v!==current);
+      return `<div style="margin-top:.5rem;display:flex;gap:.5rem;flex-wrap:wrap">${opts.map(o=>`<button class="btn btn-outline btn-sm" onclick="setStatus(${id},'${o.v}')" data-i18n="${o.k}">${t(o.k)}</button>`).join('')}</div>`;
+    }
+
+    window.setStatus = async (id, status) => {
+      try { await apiPatch(`/api/devices/${id}/status`, { status }); toast(t('statusUpdated'),'success'); loadDevice(); }
+      catch(e) { toast(e.message,'error'); }
+    };
+
+    window.downloadQr = async (id, name) => {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch(`/api/devices/${id}/qr`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Unauthorized');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `QR-${name}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    };
+
+    async function loadDevice() {
+      try {
+        let data;
+        if (token) {
+          // QR access — no JWT
+          const res = await fetch(`/qr/${token}/data`);
+          data = await res.json();
+        } else if (deviceId) {
+          data = await apiGet(`/api/devices/${deviceId}`);
+        } else {
+          document.getElementById('device-content').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p data-i18n="noDeviceSelected">No device selected</p></div>';
+          applyTranslations();
+          return;
+        }
+        renderDevice(data);
+        applyTranslations();
+      } catch(e) {
+        document.getElementById('device-content').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p data-i18n="errorLoadingData">Error loading data</p></div>';
+        applyTranslations();
+      }
+    }
+
+    window.addEventListener('languagechange', () => {
+      loadDevice();
+    });
+
+    if (!isLogin && !token) { window.location.href = '/index.html'; } else loadDevice();
+  </script>
+</body>
+</html>
