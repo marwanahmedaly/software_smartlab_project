@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lab Map — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .lang-switch-top {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .35rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+    .lang-switch-top:hover { background: var(--sidebar-bg); color: #fff; }
+    .lab-map-wrap { overflow-x:auto }
+    .lab-map { background:#f8fafc; border:2px solid var(--border); border-radius:12px; padding:1.5rem; min-width:700px; }
+    .map-grid { display:grid; grid-template-columns: repeat(5,1fr); gap:16px; }
+    .device-card-map { border-radius:10px; padding:1rem .5rem; text-align:center; cursor:pointer; transition:.2s; position:relative; border:2px solid transparent; }
+    .device-card-map:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,.12); }
+    .device-card-map.working   { background:#dcfce7; border-color:#22c55e }
+    .device-card-map.broken    { background:#fee2e2; border-color:#ef4444 }
+    .device-card-map.maintenance { background:#fef9c3; border-color:#f97316 }
+    .device-card-map i { font-size:2rem; margin-bottom:.4rem }
+    .device-card-map.working   i { color:#16a34a }
+    .device-card-map.broken    i { color:#dc2626 }
+    .device-card-map.maintenance i { color:#ea580c }
+    .device-card-map .dev-name { font-size:.78rem; font-weight:700; }
+    .map-legend { display:flex; gap:1.5rem; margin-bottom:1rem; flex-wrap:wrap }
+    .legend-item { display:flex; align-items:center; gap:.4rem; font-size:.85rem; }
+    .legend-dot { width:14px; height:14px; border-radius:50% }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-laptop-code"></i><span data-i18n="appName">Smart Lab</span></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard.html"   data-roles="admin,technician"><i class="fas fa-gauge-high"></i> <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/devices.html"     class="nav-item" data-page="devices.html"     data-roles="admin,technician"><i class="fas fa-desktop"></i> <span data-i18n="devices">Devices</span></a>
+      <a href="/issues.html"      class="nav-item" data-page="issues.html"      data-roles="admin,technician,user"><i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span></a>
+      <a href="/maintenance.html" class="nav-item" data-page="maintenance.html" data-roles="admin,technician"><i class="fas fa-screwdriver-wrench"></i> <span data-i18n="maintenance">Maintenance</span></a>
+      <a href="/map.html"         class="nav-item" data-page="map.html"         data-roles="admin,technician"><i class="fas fa-map"></i> <span data-i18n="map">Map</span></a>
+      <a href="/alerts.html"      class="nav-item" data-page="alerts.html"      data-roles="admin,technician"><i class="fas fa-bell"></i> <span data-i18n="alerts">Alerts</span></a>
+      <a href="/ai.html"          class="nav-item" data-page="ai.html"          data-roles="admin,technician,user"><i class="fas fa-robot"></i> <span data-i18n="aiAssistant">AI Assistant</span></a>
+      <a href="/reports.html"     class="nav-item" data-page="reports.html"     data-roles="admin,technician"><i class="fas fa-chart-bar"></i> <span data-i18n="reports">Reports</span></a>
+      <a href="/admin.html"       class="nav-item" data-page="admin.html" id="admin-link" data-roles="admin"><i class="fas fa-users-cog"></i> <span data-i18n="users">Users</span></a>
+    </nav>
+    <div class="sidebar-footer" data-i18n="copyright">Smart Lab &copy; 2026</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title" data-i18n="labMap">Lab Map</span>
+    <div class="topbar-actions">
+      <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <div class="alert-bell" onclick="window.location='/alerts.html'"><i class="fas fa-bell"></i><span class="badge-count" id="unread-count" style="display:none">0</span></div>
+      <div class="topbar-user"><div class="avatar" id="user-avatar">U</div><span id="user-name">User</span></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h2 class="page-title" data-i18n="interactiveLabMap">Interactive Lab Map</h2>
+      <button class="btn btn-primary" id="refresh-btn" data-i18n="refreshMap"><i class="fas fa-rotate-right"></i> Refresh Map</button>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-4" style="margin-bottom:1rem">
+      <div class="stat-card"><div class="stat-icon" style="background:#eff6ff"><i class="fas fa-desktop" style="color:var(--primary)"></i></div><div class="stat-info"><div class="stat-value" id="stat-total">0</div><div class="stat-label" data-i18n="totalDevices">Total Devices</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#f0fdf4"><i class="fas fa-circle-check" style="color:var(--success)"></i></div><div class="stat-info"><div class="stat-value" id="stat-working">0</div><div class="stat-label" data-i18n="works">Working</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#fef2f2"><i class="fas fa-circle-xmark" style="color:var(--danger)"></i></div><div class="stat-info"><div class="stat-value" id="stat-broken">0</div><div class="stat-label" data-i18n="stopped">Broken</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#fff7ed"><i class="fas fa-gear" style="color:var(--warning)"></i></div><div class="stat-info"><div class="stat-value" id="stat-maint">0</div><div class="stat-label" data-i18n="maintenance_short">Maintenance</div></div></div>
+    </div>
+
+    <div class="card">
+      <!-- Legend -->
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div><span data-i18n="works">Working</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span data-i18n="stopped">Broken</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div><span data-i18n="maintenance_short">Maintenance</span></div>
+      </div>
+      <div class="lab-map-wrap">
+        <div class="lab-map">
+          <div class="map-grid" id="map-grid">
+            <div style="grid-column:1/-1;text-align:center;padding:3rem"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:.8rem;color:var(--text-muted);margin-top:.75rem;text-align:center" data-i18n="clickDevice">Click any device to view details</div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { requireAuth, apiGet, fillTopbar, setActiveNav, logout, filterSidebar } from '/js/api.js';
+    import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
+
+    const user = requireAuth(); if(!user) throw new Error('stop');
+    if (user.role === 'user') { window.location.href = '/issues.html'; throw new Error('stop'); }
+    fillTopbar(); setActiveNav();
+    applyTranslations();
+    filterSidebar();
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const next = getLang() === 'ar' ? 'en' : 'ar';
+      setLanguage(next);
+    });
+
+    const STAT_ICON = { working:'fa-desktop', broken:'fa-circle-xmark', maintenance:'fa-gear' };
+    const STAT_LBL  = { working:t('works'), broken:t('stopped'), maintenance:t('maintenance_short') };
+
+    async function loadMap() {
+      const res   = await apiGet('/api/devices?limit=100');
+      const stats = await apiGet('/api/devices/stats');
+      const grid  = document.getElementById('map-grid');
+
+      document.getElementById('stat-total').textContent   = stats.total;
+      document.getElementById('stat-working').textContent = stats.working;
+      document.getElementById('stat-broken').textContent  = stats.broken;
+      document.getElementById('stat-maint').textContent   = stats.maintenance;
+
+      // Unread alerts badge
+      try { const a=await apiGet('/api/alerts?is_read=0'); if(a.unread>0){const el=document.getElementById('unread-count');el.textContent=a.unread;el.style.display='flex';} } catch{}
+
+      if (!res.devices.length) { grid.innerHTML='<div style="text-align:center;padding:2rem" data-i18n="noDevicesFound">No devices found</div>'; return; }
+
+      grid.innerHTML = res.devices.map(d => `
+        <div class="device-card-map ${d.status}" onclick="window.location='/device.html?id=${d.id}'" title="${d.name} — ${STAT_LBL[d.status]}">
+          <i class="fas ${STAT_ICON[d.status]}"></i>
+          <div class="dev-name">${d.name}</div>
+        </div>`).join('');
+    }
+
+    document.getElementById('refresh-btn').addEventListener('click', loadMap);
+
+    window.addEventListener('languagechange', () => {
+      loadMap();
+    });
+
+    loadMap();
+  </script>
+</body>
+</html>

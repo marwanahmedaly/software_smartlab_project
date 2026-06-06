@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maintenance Log — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .lang-switch-top {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .35rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+    .lang-switch-top:hover { background: var(--sidebar-bg); color: #fff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-laptop-code"></i><span data-i18n="appName">Smart Lab</span></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard.html"   data-roles="admin,technician">        <i class="fas fa-gauge-high"></i>           <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/devices.html"     class="nav-item" data-page="devices.html"     data-roles="admin,technician">        <i class="fas fa-desktop"></i>             <span data-i18n="devices">Devices</span></a>
+      <a href="/issues.html"      class="nav-item" data-page="issues.html"      data-roles="admin,technician,user">   <i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span></a>
+      <a href="/maintenance.html" class="nav-item" data-page="maintenance.html" data-roles="admin,technician">        <i class="fas fa-screwdriver-wrench"></i>   <span data-i18n="maintenance">Maintenance</span></a>
+      <a href="/map.html"         class="nav-item" data-page="map.html"         data-roles="admin,technician">        <i class="fas fa-map"></i>                 <span data-i18n="map">Map</span></a>
+      <a href="/alerts.html"      class="nav-item" data-page="alerts.html"      data-roles="admin,technician">        <i class="fas fa-bell"></i>                <span data-i18n="alerts">Alerts</span></a>
+      <a href="/ai.html"          class="nav-item" data-page="ai.html"          data-roles="admin,technician,user">   <i class="fas fa-robot"></i>               <span data-i18n="aiAssistant">AI Assistant</span></a>
+      <a href="/reports.html"     class="nav-item" data-page="reports.html"     data-roles="admin,technician">        <i class="fas fa-chart-bar"></i>           <span data-i18n="reports">Reports</span></a>
+      <a href="/admin.html"       class="nav-item" data-page="admin.html" id="admin-link" data-roles="admin">         <i class="fas fa-users-cog"></i> <span data-i18n="users">Users</span></a>
+    </nav>
+    <div class="sidebar-footer" data-i18n="copyright">Smart Lab &copy; 2026</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title" data-i18n="maintenanceLog">Maintenance Log</span>
+    <div class="topbar-actions">
+      <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <div class="alert-bell" onclick="window.location='/alerts.html'" data-i18n-title="alerts"><i class="fas fa-bell"></i><span class="badge-count" id="unread-count" style="display:none">0</span></div>
+      <div class="topbar-user"><div class="avatar" id="user-avatar">U</div><span id="user-name" data-i18n="user">User</span></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <h2 class="page-title" style="margin-bottom:1rem" data-i18n="maintenanceLogs">Maintenance Logs</h2>
+
+    <!-- Filters -->
+    <div class="card" style="margin-bottom:1rem;padding:.85rem 1.25rem">
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+        <input type="date" id="from-date" class="form-control" style="max-width:160px" placeholder="From" data-i18n-placeholder="from" />
+        <input type="date" id="to-date"   class="form-control" style="max-width:160px" placeholder="To" data-i18n-placeholder="to" />
+        <input id="tech-inp" class="form-control" placeholder="Technician name..." style="max-width:200px" data-i18n-placeholder="technicianNamePlaceholder" />
+        <button class="btn btn-primary btn-sm" id="filter-btn"><i class="fas fa-filter"></i> <span data-i18n="filter">Filter</span></button>
+        <button class="btn btn-outline btn-sm" id="reset-btn"><i class="fas fa-rotate-right"></i> <span data-i18n="reset">Reset</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th data-i18n="number">#</th><th data-i18n="device">Device</th><th data-i18n="technician">Technician</th><th data-i18n="notes">Notes</th><th data-i18n="date">Date</th></tr>
+          </thead>
+          <tbody id="maint-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:2rem"><i class="fas fa-spinner fa-spin"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { requireAuth, apiGet, fillTopbar, setActiveNav, logout, toast, formatDate, filterSidebar, guardPage } from '/js/api.js';
+    import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
+
+    const user = requireAuth(); if(!user) throw new Error('stop');
+    if(!guardPage('admin','technician')) throw new Error('stop');
+    fillTopbar(); setActiveNav();
+    applyTranslations();
+    filterSidebar();
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const next = getLang() === 'ar' ? 'en' : 'ar';
+      setLanguage(next);
+    });
+
+    let currentPage = 1;
+
+    async function load() {
+      const from = document.getElementById('from-date').value;
+      const to   = document.getElementById('to-date').value;
+      const tech = document.getElementById('tech-inp').value;
+      let url    = `/api/reports/maintenance?page=${currentPage}&limit=12`;
+      if (from) url += `&from=${from}`;
+      if (to)   url += `&to=${to}`;
+      if (tech) url += `&technician=${encodeURIComponent(tech)}`;
+
+      const res  = await apiGet(url);
+      const tbody = document.getElementById('maint-tbody');
+
+      if (!res.logs.length) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-inbox"></i><p data-i18n="noRecordsFound">No records found</p></div></td></tr>';
+      } else {
+        tbody.innerHTML = res.logs.map((l,i) => `
+          <tr>
+            <td>${(currentPage-1)*12 + i + 1}</td>
+            <td>${l.device_name||'—'}</td>
+            <td>${l.technician_name||l.performed_by_name||'—'}</td>
+            <td style="max-width:300px;white-space:normal">${l.notes||'—'}</td>
+            <td>${formatDate(l.performed_at||l.created_at)}</td>
+          </tr>`).join('');
+      }
+      buildPagination(res.total, 12);
+
+      // Unread alerts
+      try { const a=await apiGet('/api/alerts?is_read=0'); if(a.unread>0){const el=document.getElementById('unread-count');el.textContent=a.unread;el.style.display='flex';} } catch{}
+    }
+
+    function buildPagination(total, limit) {
+      const pages = Math.ceil(total/limit);
+      const parent = document.getElementById('pagination');
+      if(pages<=1){parent.innerHTML='';return;}
+      let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="changePage(${currentPage-1})">‹</button>`;
+      for(let i=1;i<=pages;i++) html+=`<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
+      html += `<button class="page-btn" ${currentPage===pages?'disabled':''} onclick="changePage(${currentPage+1})">›</button>`;
+      parent.innerHTML = html;
+    }
+
+    window.changePage = (p) => { currentPage = p; load(); };
+    document.getElementById('filter-btn').addEventListener('click', () => { currentPage=1; load(); });
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      document.getElementById('from-date').value='';
+      document.getElementById('to-date').value='';
+      document.getElementById('tech-inp').value='';
+      currentPage=1; load();
+    });
+
+    window.addEventListener('languagechange', () => {
+      load();
+    });
+
+    load();
+  </script>
+</body>
+</html>

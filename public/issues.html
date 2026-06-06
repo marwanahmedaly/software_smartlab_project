@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Issues — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .lang-switch-top {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .35rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+    .lang-switch-top:hover { background: var(--sidebar-bg); color: #fff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-laptop-code"></i><span data-i18n="appName">Smart Lab</span></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard.html"   data-roles="admin,technician">        <i class="fas fa-gauge-high"></i>           <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/devices.html"     class="nav-item" data-page="devices.html"     data-roles="admin,technician">        <i class="fas fa-desktop"></i>             <span data-i18n="devices">Devices</span></a>
+      <a href="/issues.html"      class="nav-item" data-page="issues.html"      data-roles="admin,technician,user">   <i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span></a>
+      <a href="/maintenance.html" class="nav-item" data-page="maintenance.html" data-roles="admin,technician">        <i class="fas fa-screwdriver-wrench"></i>   <span data-i18n="maintenance">Maintenance</span></a>
+      <a href="/map.html"         class="nav-item" data-page="map.html"         data-roles="admin,technician">        <i class="fas fa-map"></i>                 <span data-i18n="map">Map</span></a>
+      <a href="/alerts.html"      class="nav-item" data-page="alerts.html"      data-roles="admin,technician">        <i class="fas fa-bell"></i>                <span data-i18n="alerts">Alerts</span></a>
+      <a href="/ai.html"          class="nav-item" data-page="ai.html"          data-roles="admin,technician,user">   <i class="fas fa-robot"></i>               <span data-i18n="aiAssistant">AI Assistant</span></a>
+      <a href="/reports.html"     class="nav-item" data-page="reports.html"     data-roles="admin,technician">        <i class="fas fa-chart-bar"></i>           <span data-i18n="reports">Reports</span></a>
+      <a href="/admin.html"       class="nav-item" data-page="admin.html" id="admin-link" data-roles="admin">         <i class="fas fa-users-cog"></i> <span data-i18n="users">Users</span></a>
+    </nav>
+    <div class="sidebar-footer" data-i18n="copyright">Smart Lab &copy; 2026</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title" data-i18n="myIssues">My Issues</span>
+    <div class="topbar-actions">
+      <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <div class="alert-bell" onclick="window.location='/alerts.html'" data-i18n-title="alerts"><i class="fas fa-bell"></i><span class="badge-count" id="unread-count" style="display:none">0</span></div>
+      <div class="topbar-user"><div class="avatar" id="user-avatar">U</div><span id="user-name" data-i18n="user">User</span></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <h2 class="page-title" style="margin-bottom:1rem" data-i18n="issuesAndReports">Issues and Reports</h2>
+
+    <div class="grid grid-1-2">
+      <!-- Submit Issue Form -->
+      <div class="card" style="align-self:start">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-plus-circle" style="color:var(--primary)"></i> <span data-i18n="submitNewIssue">Submit New Issue</span></span>
+        </div>
+        <form id="issue-form">
+          <div class="form-group">
+            <label class="form-label" data-i18n="device">Device *</label>
+            <select class="form-control" id="f-device" required><option value="" data-i18n="selectDevice">— Select Device —</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="issueType">Issue Type *</label>
+            <select class="form-control" id="f-type" required>
+              <option value="" data-i18n="selectType">— Select Type —</option>
+              <option data-i18n="screenIssue">Screen Issue</option>
+              <option data-i18n="keyboardIssue">Keyboard Issue</option>
+              <option data-i18n="deviceNotWorking">Device Not Working</option>
+              <option data-i18n="verySlow">Very Slow</option>
+              <option data-i18n="networkIssue">Network Issue</option>
+              <option data-i18n="mouseIssue">Mouse Issue</option>
+              <option data-i18n="audioIssue">Audio Issue</option>
+              <option data-i18n="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="priority">Priority</label>
+            <select class="form-control" id="f-priority">
+              <option value="low" data-i18n="low">Low</option>
+              <option value="medium" selected data-i18n="medium">Medium</option>
+              <option value="high" data-i18n="high">High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="issueDescription">Issue Description *</label>
+            <textarea class="form-control" id="f-desc" placeholder="Describe the issue in detail..." rows="4" required data-i18n-placeholder="describeIssue"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="imageOptional">Image (Optional)</label>
+            <input type="file" class="form-control" id="f-image" accept="image/*" />
+          </div>
+
+          <!-- AI Suggestion Box -->
+          <div class="ai-box hidden" id="ai-box">
+            <div class="ai-box-header"><i class="fas fa-robot"></i> <span data-i18n="geminiSuggestions">Gemini AI Suggestions</span></div>
+            <pre id="ai-text" data-i18n="analyzing">Analyzing...</pre>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">
+            <i class="fas fa-paper-plane"></i> <span data-i18n="submitIssue">Submit Issue</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Issues Table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-list" style="color:var(--danger)"></i> <span data-i18n="myIssues">My Issues</span></span>
+          <select class="form-control" id="status-filter" style="max-width:150px">
+            <option value="" data-i18n="all">All</option>
+            <option value="open" data-i18n="open">Open</option>
+            <option value="in_progress" data-i18n="in_progress">In Progress</option>
+            <option value="resolved" data-i18n="resolved">Resolved</option>
+          </select>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th data-i18n="device">Device</th><th data-i18n="issue">Issue</th><th data-i18n="priority">Priority</th><th data-i18n="status">Status</th><th data-i18n="date">Date</th><th data-i18n="action">Action</th></tr>
+            </thead>
+            <tbody id="issues-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:2rem"><i class="fas fa-spinner fa-spin"></i></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+
+    <!-- Issue Detail Modal -->
+    <div class="modal-overlay hidden" id="detail-modal">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header"><span data-i18n="issueDetails">Issue Details</span><button class="modal-close" id="detail-modal-close" data-i18n-title="close"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body" id="detail-body">
+          <!-- Dynamic content -->
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="detail-modal-close-btn" data-i18n="close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Status Modal -->
+    <div class="modal-overlay hidden" id="status-modal">
+      <div class="modal" style="max-width:420px">
+        <div class="modal-header"><span data-i18n="updateIssueStatus">Update Issue Status</span><button class="modal-close" id="status-modal-close" data-i18n-title="close"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-issue-id" />
+          <div class="form-group"><label class="form-label" data-i18n="newStatus">New Status</label>
+            <select class="form-control" id="new-status">
+              <option value="open" data-i18n="open">Open</option>
+              <option value="in_progress" data-i18n="in_progress">In Progress</option>
+              <option value="resolved" data-i18n="resolved">Resolved</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label" data-i18n="resolutionNotes">Resolution Notes</label><textarea class="form-control" id="resolution-notes" rows="3"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="status-modal-cancel" data-i18n="cancel">Cancel</button>
+          <button class="btn btn-primary" id="status-save"><i class="fas fa-save"></i> <span data-i18n="save">Save</span></button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { requireAuth, apiGet, apiPost, apiPatch, apiForm, fillTopbar, setActiveNav, logout, toast, formatDate, debounce, filterSidebar } from '/js/api.js';
+    import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
+
+    const user = requireAuth(); if (!user) throw new Error('stop');
+    fillTopbar(); setActiveNav();
+    applyTranslations();
+    filterSidebar();
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const next = getLang() === 'ar' ? 'en' : 'ar';
+      setLanguage(next);
+    });
+
+    const STAT_LBL  = { open:'Open', in_progress:'In Progress', resolved:'Resolved' };
+    const STAT_MAP  = { open:'badge-open', in_progress:'badge-in_progress', resolved:'badge-resolved' };
+    const PRIORI    = { low:'Low', medium:'Medium', high:'High' };
+    let currentPage = 1;
+    let currentIssues = [];
+
+    // Load devices into Select
+    const deviceSel = document.getElementById('f-device');
+    const presetDevice = new URLSearchParams(window.location.search).get('device');
+    apiGet('/api/devices?limit=100').then(res => {
+      res.devices.forEach(d => {
+        const o = new Option(d.name, d.id);
+        deviceSel.appendChild(o);
+      });
+      if (presetDevice) deviceSel.value = presetDevice;
+    });
+
+    // AI Debounce
+    const canAI = ['admin','technician'].includes(user.role);
+    const descEl  = document.getElementById('f-desc');
+    const aiBox   = document.getElementById('ai-box');
+    const aiText  = document.getElementById('ai-text');
+
+    if (canAI) {
+      descEl.addEventListener('input', debounce(async () => {
+        const desc = descEl.value.trim();
+        if (desc.length < 10) return;
+        aiBox.classList.remove('hidden');
+        aiText.textContent = t('analyzingWithGemini');
+        try {
+          const res = await apiPost('/api/ai/diagnose', { description: desc, device_id: deviceSel.value || null });
+          aiText.textContent = res.suggestion;
+        } catch(e) { aiText.textContent = t('couldNotGetSuggestions'); }
+      }, 1200));
+    }
+
+    // Submit issue
+    document.getElementById('issue-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData();
+      fd.append('device_id',  document.getElementById('f-device').value);
+      fd.append('issue_type', document.getElementById('f-type').value);
+      fd.append('description',document.getElementById('f-desc').value);
+      fd.append('priority',   document.getElementById('f-priority').value);
+      const img = document.getElementById('f-image').files[0];
+      if (img) fd.append('image', img);
+
+      try {
+        const res = await apiForm('/api/issues', fd);
+        // Save AI suggestion in issue
+        if (canAI && aiText.textContent.length > 10 && aiText.textContent !== t('analyzingWithGemini')) {
+          await apiPatch(`/api/issues/${res.issue.id}/ai`, { ai_suggestions: aiText.textContent });
+        }
+        toast(t('issueSubmittedSuccessfully'), 'success');
+        e.target.reset();
+        aiBox.classList.add('hidden');
+        loadIssues();
+      } catch(err) { toast(err.message, 'error'); }
+    });
+
+    // Load table
+    async function loadIssues() {
+      const status = document.getElementById('status-filter').value;
+      const res = await apiGet(`/api/issues?page=${currentPage}&limit=8${status?'&status='+status:''}`);
+      const tbody = document.getElementById('issues-tbody');
+      currentIssues = res.issues || [];
+
+      if (!res.issues.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-inbox"></i><p data-i18n="noIssuesFound">No issues found</p></div></td></tr>';
+      } else {
+        tbody.innerHTML = res.issues.map((i, idx) => `
+          <tr style="cursor:pointer" onclick="openDetail(${idx})" title="Click to view details" data-i18n-title="clickToViewDetails">
+            <td>${i.device_name||'—'}</td>
+            <td>${i.issue_type}</td>
+            <td><span class="badge badge-${i.priority}" data-i18n="${i.priority}">${PRIORI[i.priority]}</span></td>
+            <td><span class="badge ${STAT_MAP[i.status]}" data-i18n="${i.status}">${STAT_LBL[i.status]}</span></td>
+            <td>${formatDate(i.created_at)}</td>
+            <td onclick="event.stopPropagation()">${canAI && i.status!=='resolved' ? `<button class="btn btn-outline btn-sm btn-icon" onclick="openStatus(${i.id},'${i.status}')" title="Update" data-i18n-title="update"><i class="fas fa-pen-to-square"></i></button>`:''}</td>
+          </tr>`).join('');
+      }
+      buildPagination(res.total, res.limit);
+
+      // Unread alerts
+      try { const a = await apiGet('/api/alerts?is_read=0'); if(a.unread>0){const el=document.getElementById('unread-count');el.textContent=a.unread;el.style.display='flex';} } catch{}
+    }
+
+    function buildPagination(total, limit) {
+      const pages = Math.ceil(total / limit);
+      const parent = document.getElementById('pagination');
+      if (pages <= 1) { parent.innerHTML=''; return; }
+      let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="changePage(${currentPage-1})">‹</button>`;
+      for (let i = 1; i <= pages; i++) html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
+      html += `<button class="page-btn" ${currentPage===pages?'disabled':''} onclick="changePage(${currentPage+1})">›</button>`;
+      parent.innerHTML = html;
+    }
+
+    window.changePage = (p) => { currentPage = p; loadIssues(); };
+    document.getElementById('status-filter').addEventListener('change', () => { currentPage=1; loadIssues(); });
+
+    // Issue detail modal
+    const detailModal = document.getElementById('detail-modal');
+    const detailBody  = document.getElementById('detail-body');
+
+    window.openDetail = (idx) => {
+      const i = currentIssues[idx];
+      if (!i) return;
+      detailBody.innerHTML = `
+        <div style="margin-bottom:1rem">
+          <label class="form-label" data-i18n="device">Device</label>
+          <div style="font-weight:600">${i.device_name||'—'} ${i.device_type ? '— ' + i.device_type : ''}</div>
+        </div>
+        <div style="margin-bottom:1rem">
+          <label class="form-label" data-i18n="issueType">Issue Type</label>
+          <div>${i.issue_type}</div>
+        </div>
+        <div style="margin-bottom:1rem">
+          <label class="form-label" data-i18n="description">Description</label>
+          <div style="background:#f8fafc;padding:.75rem;border-radius:8px;border:1px solid var(--border);line-height:1.7">${i.description||'—'}</div>
+        </div>
+        <div style="margin-bottom:1rem">
+          <label class="form-label" data-i18n="status">Status</label>
+          <div><span class="badge ${STAT_MAP[i.status]}" data-i18n="${i.status}">${STAT_LBL[i.status]}</span></div>
+        </div>
+        <div style="margin-bottom:1rem">
+          <label class="form-label" data-i18n="priority">Priority</label>
+          <div><span class="badge badge-${i.priority}" data-i18n="${i.priority}">${PRIORI[i.priority]}</span></div>
+        </div>
+        ${i.resolution_notes ? `<div style="margin-bottom:1rem"><label class="form-label" data-i18n="resolutionNotes">Resolution Notes</label><div style="background:#f0fdf4;padding:.75rem;border-radius:8px;border:1px solid #bbf7d0;line-height:1.7">${i.resolution_notes}</div></div>` : ''}
+        ${i.ai_suggestions ? `<div style="margin-bottom:1rem"><label class="form-label"><i class="fas fa-robot" style="color:var(--primary)"></i> <span data-i18n="aiSuggestions">AI Suggestions</span></label><div style="background:#eff6ff;padding:.75rem;border-radius:8px;border:1px solid #bfdbfe;line-height:1.7;white-space:pre-wrap">${i.ai_suggestions}</div></div>` : ''}
+        ${i.image_path ? `<div style="margin-bottom:1rem"><label class="form-label" data-i18n="attachedImage">Attached Image</label><img src="${i.image_path}" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" /></div>` : ''}
+        <div style="color:var(--text-muted);font-size:.85rem">
+          <div><span data-i18n="dateLabel">📅 Date:</span> ${formatDate(i.created_at)}</div>
+          ${i.resolved_at ? `<div><span data-i18n="resolvedDateLabel">✅ Resolved Date:</span> ${formatDate(i.resolved_at)}</div>` : ''}
+          <div><span data-i18n="reporterLabel">👤 Reporter:</span> ${i.reporter_name||'—'}</div>
+          ${i.resolver_name ? `<div><span data-i18n="technicianLabel">🔧 Technician:</span> ${i.resolver_name}</div>` : ''}
+        </div>
+      `;
+      detailModal.classList.remove('hidden');
+    };
+    document.getElementById('detail-modal-close').addEventListener('click', () => detailModal.classList.add('hidden'));
+    document.getElementById('detail-modal-close-btn').addEventListener('click', () => detailModal.classList.add('hidden'));
+
+    // Update status modal
+    const statusModal = document.getElementById('status-modal');
+    window.openStatus = (id, status) => {
+      document.getElementById('edit-issue-id').value = id;
+      document.getElementById('new-status').value    = status;
+      document.getElementById('resolution-notes').value = '';
+      statusModal.classList.remove('hidden');
+    };
+    document.getElementById('status-modal-close').addEventListener('click', () => statusModal.classList.add('hidden'));
+    document.getElementById('status-modal-cancel').addEventListener('click', () => statusModal.classList.add('hidden'));
+    document.getElementById('status-save').addEventListener('click', async () => {
+      const id     = document.getElementById('edit-issue-id').value;
+      const status = document.getElementById('new-status').value;
+      const notes  = document.getElementById('resolution-notes').value;
+      try {
+        await apiPatch(`/api/issues/${id}/status`, { status, resolution_notes: notes });
+        statusModal.classList.add('hidden');
+        toast(t('statusUpdated'), 'success');
+        loadIssues();
+      } catch(e) { toast(e.message, 'error'); }
+    });
+
+    window.addEventListener('languagechange', () => {
+      loadIssues();
+    });
+
+    loadIssues();
+  </script>
+</body>
+</html>
