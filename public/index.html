@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="loginTitle">Login — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .login-page {
+      background-image: linear-gradient(rgba(30,58,138,.72), rgba(30,58,138,.72)),
+        url('https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=1600&q=80');
+    }
+    .eye-btn {
+      position: absolute;
+      left: .75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #94A3B8;
+      font-size: .95rem;
+    }
+    .pass-wrap { position: relative; }
+    .pass-wrap .form-control { padding-left: 2.2rem; }
+    .login-footer { text-align: center; margin-top: 1rem; font-size: .85rem; color: #64748B; }
+    .login-footer a { color: var(--primary); font-weight: 600; }
+    .error-msg { color: var(--danger); font-size: .85rem; margin-top: .5rem; display: none; }
+    .lang-switch {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: .4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .9rem;
+      backdrop-filter: blur(4px);
+      transition: background .2s;
+    }
+    .lang-switch:hover { background: rgba(255,255,255,0.25); }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <button class="lang-switch" id="lang-switcher" data-i18n="langBtn">English</button>
+    <div class="login-card">
+      <div class="login-logo">
+        <i class="fas fa-laptop-code"></i>
+        <h1 data-i18n="sysName">Smart Lab</h1>
+        <p data-i18n="sysDesc">Computer Lab Management &amp; Maintenance System</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="email" data-i18n="emailLabel">Email</label>
+          <input type="email" id="email" class="form-control" data-i18n-placeholder="emailPlaceholder" placeholder="admin@lab.com" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password" data-i18n="passwordLabel">Password</label>
+          <div class="pass-wrap">
+            <input type="password" id="password" class="form-control" data-i18n-placeholder="passwordPlaceholder" placeholder="••••••••" required />
+            <button type="button" class="eye-btn" id="toggle-pass">
+              <i class="fas fa-eye" id="eye-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <p class="error-msg" id="err-msg"><i class="fas fa-circle-exclamation"></i> <span id="err-text"></span></p>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem" id="login-btn">
+          <i class="fas fa-sign-in-alt"></i> <span data-i18n="loginBtn">Login</span>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <a href="/forgot-password.html" data-i18n="forgotPassword">Forgot password?</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { apiPost, toast, getUser } from '/js/api.js';
+    import { setLanguage, getLang, applyTranslations } from '/js/i18n.js';
+
+    applyTranslations();
+
+    // Language switcher
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const next = getLang() === 'ar' ? 'en' : 'ar';
+      setLanguage(next);
+    });
+
+    // If already logged in → redirect based on role
+    const currentUser = getUser();
+    if (currentUser) {
+      window.location.href = currentUser.role === 'user' ? '/issues.html' : '/dashboard.html';
+    }
+
+    // Show/hide password
+    document.getElementById('toggle-pass').addEventListener('click', () => {
+      const inp  = document.getElementById('password');
+      const icon = document.getElementById('eye-icon');
+      if (inp.type === 'password') { inp.type = 'text';     icon.className = 'fas fa-eye-slash'; }
+      else                         { inp.type = 'password'; icon.className = 'fas fa-eye'; }
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn      = document.getElementById('login-btn');
+      const errMsg   = document.getElementById('err-msg');
+      const errText  = document.getElementById('err-text');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (getLang() === 'en' ? 'Logging in...' : 'Logging in...');
+      errMsg.style.display = 'none';
+
+      try {
+        const data = await apiPost('/api/auth/login', { email, password });
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = data.user.role === 'user' ? '/issues.html' : '/dashboard.html';
+      } catch (err) {
+        errText.textContent = err.message;
+        errMsg.style.display = 'flex';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ' + (getLang() === 'en' ? 'Login' : 'Login');
+      }
+    });
+  </script>
+</body>
+</html>
