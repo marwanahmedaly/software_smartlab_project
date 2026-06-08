@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="userManagement">User Management — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .lang-switch-top {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .35rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+    .lang-switch-top:hover { background: var(--sidebar-bg); color: #fff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-laptop-code"></i><span>Smart Lab</span></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard.html"   data-roles="admin,technician">        <i class="fas fa-gauge-high"></i>           <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/devices.html"     class="nav-item" data-page="devices.html"     data-roles="admin,technician">        <i class="fas fa-desktop"></i>             <span data-i18n="devices">Devices</span></a>
+      <a href="/issues.html"      class="nav-item" data-page="issues.html"      data-roles="admin,technician,user">   <i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span></a>
+      <a href="/maintenance.html" class="nav-item" data-page="maintenance.html" data-roles="admin,technician">        <i class="fas fa-screwdriver-wrench"></i>   <span data-i18n="maintenance">Maintenance</span></a>
+      <a href="/map.html"         class="nav-item" data-page="map.html"         data-roles="admin,technician">        <i class="fas fa-map"></i>                 <span data-i18n="map">Map</span></a>
+      <a href="/alerts.html"      class="nav-item" data-page="alerts.html"      data-roles="admin,technician">        <i class="fas fa-bell"></i>                <span data-i18n="alerts">Alerts</span></a>
+      <a href="/ai.html"          class="nav-item" data-page="ai.html"          data-roles="admin,technician,user">   <i class="fas fa-robot"></i>               <span data-i18n="aiAssistant">AI Assistant</span></a>
+      <a href="/reports.html"     class="nav-item" data-page="reports.html"     data-roles="admin,technician">        <i class="fas fa-chart-bar"></i>           <span data-i18n="reports">Reports</span></a>
+      <a href="/admin.html"       class="nav-item" data-page="admin.html"       data-roles="admin">                  <i class="fas fa-users-cog"></i>              <span data-i18n="users">Users</span></a>
+    </nav>
+    <div class="sidebar-footer">Smart Lab &copy; 2026</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title" data-i18n="userManagement">User Management</span>
+    <div class="topbar-actions">
+      <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <div class="alert-bell" onclick="window.location='/alerts.html'"><i class="fas fa-bell"></i><span class="badge-count" id="unread-count" style="display:none">0</span></div>
+      <div class="topbar-user"><div class="avatar" id="user-avatar">U</div><span id="user-name">User</span></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h2 class="page-title" data-i18n="userManagement">User Management</h2>
+      <button class="btn btn-primary" id="add-btn"><i class="fas fa-plus"></i> <span data-i18n="addUser">Add User</span></button>
+    </div>
+
+    <div class="card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>#</th><th data-i18n="name">Name</th><th data-i18n="email">Email</th><th data-i18n="role">Role</th><th data-i18n="createdDate">Created Date</th><th data-i18n="actions">Actions</th></tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:2rem"><i class="fas fa-spinner fa-spin"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay hidden" id="modal-overlay">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header">
+        <span id="modal-title" data-i18n="addNewUser">Add User</span>
+        <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="user-form">
+          <input type="hidden" id="edit-id" />
+          <div class="form-group"><label class="form-label" data-i18n="name">Name *</label><input class="form-control" id="f-name" required /></div>
+          <div class="form-group"><label class="form-label" data-i18n="email">Email *</label><input class="form-control" id="f-email" type="email" required /></div>
+          <div class="form-group"><label class="form-label" data-i18n="role">Role *</label>
+            <select class="form-control" id="f-role" required>
+              <option value="user" data-i18n="user">User</option>
+              <option value="technician" data-i18n="technician">Technician</option>
+              <option value="admin" data-i18n="admin">Admin</option>
+            </select>
+          </div>
+          <div class="form-group" id="pw-group">
+            <label class="form-label" data-i18n="password">Password *</label>
+            <input class="form-control" id="f-pass" type="password" placeholder="At least 8 characters" data-i18n-placeholder="atLeast8Chars" />
+            <small class="form-hint" id="pw-hint" data-i18n="leaveEmptyToKeep">Leave empty to keep current password</small>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="modal-cancel" data-i18n="cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-save"><i class="fas fa-save"></i> <span data-i18n="save">Save</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireRole, apiGet, apiPost, apiPut, apiDel, fillTopbar, setActiveNav, logout, toast, formatDate, filterSidebar } from '/js/api.js';
+    import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
+
+    const user = requireRole('admin'); if(!user) throw new Error('stop');
+    fillTopbar(); setActiveNav();
+    applyTranslations();
+    filterSidebar();
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const next = getLang() === 'ar' ? 'en' : 'ar';
+      setLanguage(next);
+    });
+
+    const ROLE_LBL = { admin:t('admin'), technician:t('technician'), user:t('user') };
+    const ROLE_MAP = { admin:'badge-broken', technician:'badge-maintenance', user:'badge-working' };
+    let editMode   = false;
+
+    async function load() {
+      const res   = await apiGet('/api/users');
+      const tbody = document.getElementById('users-tbody');
+      if (!res.users.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-users"></i><p data-i18n="noUsersFound">No users found</p></div></td></tr>';
+        return;
+      }
+      tbody.innerHTML = res.users.map((u,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td><strong>${u.name}</strong></td>
+          <td>${u.email}</td>
+          <td><span class="badge ${ROLE_MAP[u.role]}" data-i18n="${u.role}">${ROLE_LBL[u.role]}</span></td>
+          <td>${formatDate(u.created_at)}</td>
+          <td>
+            <button class="btn btn-outline btn-sm btn-icon" onclick="openEdit(${u.id},'${u.name}','${u.email}','${u.role}')" title="Edit" data-i18n-title="edit"><i class="fas fa-pen"></i></button>
+            ${u.id!==user.id ? `<button class="btn btn-danger btn-sm btn-icon" onclick="delUser(${u.id},'${u.name}')" title="Delete" data-i18n-title="delete"><i class="fas fa-trash"></i></button>` : ''}
+          </td>
+        </tr>`).join('');
+
+      // Unread alerts
+      try { const a=await apiGet('/api/alerts?is_read=0'); if(a.unread>0){const el=document.getElementById('unread-count');el.textContent=a.unread;el.style.display='flex';} } catch{}
+    }
+
+    // Modal
+    const overlay = document.getElementById('modal-overlay');
+    function openModal(title) { document.getElementById('modal-title').textContent=title; overlay.classList.remove('hidden'); }
+    function closeModal() { overlay.classList.add('hidden'); }
+
+    document.getElementById('add-btn').addEventListener('click', () => {
+      editMode=false;
+      document.getElementById('user-form').reset();
+      document.getElementById('edit-id').value='';
+      document.getElementById('pw-hint').textContent='';
+      document.getElementById('f-pass').required=true;
+      openModal(t('addNewUser'));
+    });
+
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+    window.openEdit = (id, name, email, role) => {
+      editMode=true;
+      document.getElementById('edit-id').value  = id;
+      document.getElementById('f-name').value   = name;
+      document.getElementById('f-email').value  = email;
+      document.getElementById('f-role').value   = role;
+      document.getElementById('f-pass').value   = '';
+      document.getElementById('f-pass').required= false;
+      document.getElementById('pw-hint').textContent = 'Leave empty to keep current password';
+      openModal(t('editUser'));
+    };
+
+    document.getElementById('modal-save').addEventListener('click', async () => {
+      const id    = document.getElementById('edit-id').value;
+      const body  = {
+        name:  document.getElementById('f-name').value,
+        email: document.getElementById('f-email').value,
+        role:  document.getElementById('f-role').value,
+      };
+      const pw = document.getElementById('f-pass').value;
+      if (pw) body.password = pw;
+
+      try {
+        if (id) await apiPut(`/api/users/${id}`, body);
+        else    await apiPost('/api/users', { ...body, password: pw });
+        closeModal(); toast(id?t('updated'):t('added'),'success'); load();
+      } catch(e) { toast(e.message, 'error'); }
+    });
+
+    window.delUser = async (id, name) => {
+      if(!confirm(`${name} ${t('permanentlyDeleted')}`)) return;
+      try { await apiDel(`/api/users/${id}`); toast(t('deleted'),'success'); load(); }
+      catch(e) { toast(e.message,'error'); }
+    };
+
+    window.addEventListener('languagechange', () => {
+      load();
+    });
+
+    load();
+  </script>
+</body>
+</html>

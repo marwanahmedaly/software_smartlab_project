@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alerts — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .alert-item { display:flex; align-items:flex-start; gap:1rem; padding:1rem 1.25rem; border-bottom:1px solid var(--border); transition:.2s; }
+    .alert-item:last-child { border-bottom:none }
+    .alert-item.unread { background:#eff6ff }
+    .alert-item.unread:hover { background:#dbeafe }
+    .alert-item:not(.unread):hover { background:#f8fafc }
+    .alert-dot { width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:.35rem }
+    .alert-dot.low    { background:#22c55e }
+    .alert-dot.medium { background:#f97316 }
+    .alert-dot.high   { background:#ef4444 }
+    .alert-body { flex:1 }
+    .alert-msg  { font-weight:600; font-size:.95rem; color:var(--text); }
+    .alert-meta { font-size:.8rem; color:var(--text-muted); margin-top:.25rem }
+    .alert-read-btn { font-size:.75rem; color:var(--primary); cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
+    .sev-tabs { display:flex; gap:.5rem; margin-bottom:1rem; flex-wrap:wrap }
+    .sev-tab { padding:.4rem 1rem; border-radius:20px; cursor:pointer; border:1px solid var(--border); font-size:.85rem; background:#fff; }
+    .sev-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+    /* Prediction card styles */
+    .prediction-card {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .prediction-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: .75rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .prediction-list {
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+    .prediction-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: .6rem .9rem;
+    }
+    .prediction-name {
+      font-weight: 600;
+      font-size: .9rem;
+      min-width: 100px;
+    }
+    .prediction-bar-wrap {
+      flex: 1;
+      height: 10px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .prediction-bar {
+      height: 100%;
+      border-radius: 5px;
+      transition: width .6s ease;
+    }
+    .prediction-score {
+      font-weight: 700;
+      font-size: .9rem;
+      min-width: 48px;
+      text-align: left;
+    }
+    .prediction-badge {
+      font-size: .72rem;
+      padding: .2rem .55rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.2);
+      white-space: nowrap;
+    }
+    .prediction-actions {
+      display: flex;
+      gap: .5rem;
+      margin-top: .75rem;
+    }
+    .prediction-actions button {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      padding: .4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+    .prediction-actions button:hover { background: rgba(255,255,255,0.35); }
+    .lang-switch-top {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .35rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+    .lang-switch-top:hover { background: var(--sidebar-bg); color: #fff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-laptop-code"></i><span data-i18n="appName">Smart Lab</span></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard.html"   data-roles="admin,technician"><i class="fas fa-gauge-high"></i> <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/devices.html"     class="nav-item" data-page="devices.html"     data-roles="admin,technician"><i class="fas fa-desktop"></i> <span data-i18n="devices">Devices</span></a>
+      <a href="/issues.html"      class="nav-item" data-page="issues.html"      data-roles="admin,technician,user"><i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span></a>
+      <a href="/maintenance.html" class="nav-item" data-page="maintenance.html" data-roles="admin,technician"><i class="fas fa-screwdriver-wrench"></i> <span data-i18n="maintenance">Maintenance</span></a>
+      <a href="/map.html"         class="nav-item" data-page="map.html"         data-roles="admin,technician"><i class="fas fa-map"></i> <span data-i18n="map">Map</span></a>
+      <a href="/alerts.html"      class="nav-item" data-page="alerts.html"      data-roles="admin,technician"><i class="fas fa-bell"></i> <span data-i18n="alerts">Alerts</span></a>
+      <a href="/ai.html"          class="nav-item" data-page="ai.html"          data-roles="admin,technician,user"><i class="fas fa-robot"></i> <span data-i18n="aiAssistant">AI Assistant</span></a>
+      <a href="/reports.html"     class="nav-item" data-page="reports.html"     data-roles="admin,technician"><i class="fas fa-chart-bar"></i> <span data-i18n="reports">Reports</span></a>
+      <a href="/admin.html"       class="nav-item" data-page="admin.html" id="admin-link" data-roles="admin"><i class="fas fa-users-cog"></i> <span data-i18n="users">Users</span></a>
+    </nav>
+    <div class="sidebar-footer" data-i18n="copyright">Smart Lab &copy; 2026</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title" data-i18n="alerts">Alerts</span>
+    <div class="topbar-actions">
+      <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <div class="topbar-user"><div class="avatar" id="user-avatar">U</div><span id="user-name">User</span></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn" data-i18n="logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h2 class="page-title" data-i18n="predictiveAlerts">Predictive Alerts</h2>
+      <button class="btn btn-outline" id="mark-all-btn" data-i18n="markAllAsRead"><i class="fas fa-check-double"></i> Mark all as read</button>
+    </div>
+
+    <!-- AI Predictions Panel -->
+    <div class="prediction-card" id="prediction-card" style="display:none">
+      <h3 data-i18n="aiModelPredictions"><i class="fas fa-brain"></i> AI Model Predictions</h3>
+      <div class="prediction-list" id="prediction-list"></div>
+      <div class="prediction-actions" id="prediction-actions" style="display:none">
+        <button id="run-prediction-btn" data-i18n="runModel"><i class="fas fa-play"></i> Run Model</button>
+      </div>
+    </div>
+
+    <div class="sev-tabs">
+      <button class="sev-tab active" data-sev="" data-i18n="all">All</button>
+      <button class="sev-tab" data-sev="high" data-i18n="high">High</button>
+      <button class="sev-tab" data-sev="medium" data-i18n="medium">Medium</button>
+      <button class="sev-tab" data-sev="low" data-i18n="low">Low</button>
+      <button class="sev-tab" data-type="prediction" data-i18n="predictionsTab">🤖 Predictions</button>
+    </div>
+
+    <div class="card" style="padding:0">
+      <div id="alerts-list"><div style="padding:3rem;text-align:center"><i class="fas fa-spinner fa-spin fa-2x"></i></div></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { requireAuth, apiGet, apiPost, apiPatch, fillTopbar, setActiveNav, logout, toast, formatDate, filterSidebar } from '/js/api.js';
+    import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
+
+    const user = requireAuth(); if(!user) throw new Error('stop');
+    if (user.role === 'user') { window.location.href = '/issues.html'; throw new Error('stop'); }
+    fillTopbar(); setActiveNav();
+    applyTranslations();
+    filterSidebar();
+    if(user.role==='user') document.getElementById('mark-all-btn').style.display='none';
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const next = getLang() === 'ar' ? 'en' : 'ar';
+      setLanguage(next);
+    });
+
+    const SEV_LBL = { low:t('low'), medium:t('medium'), high:t('high') };
+    let currentSev  = '';
+    let currentType = '';
+    let currentPage = 1;
+
+    async function loadPredictions() {
+      try {
+        const res = await apiGet('/api/alerts/predictions');
+        const card = document.getElementById('prediction-card');
+        const list = document.getElementById('prediction-list');
+        if (!res.predictions || !res.predictions.length) {
+          card.style.display = 'none';
+          return;
+        }
+        card.style.display = 'block';
+        list.innerHTML = res.predictions.slice(0, 5).map(p => {
+          const barColor = p.score >= 75 ? '#ef4444' : p.score >= 45 ? '#f97316' : '#22c55e';
+          return `
+            <div class="prediction-row">
+              <div class="prediction-name">${p.device_name}</div>
+              <div class="prediction-bar-wrap">
+                <div class="prediction-bar" style="width:${p.score}%;background:${barColor}"></div>
+              </div>
+              <div class="prediction-score">${p.score}%</div>
+              <div class="prediction-badge">${p.probability}</div>
+            </div>`;
+        }).join('');
+        if (user.role !== 'user') {
+          document.getElementById('prediction-actions').style.display = 'flex';
+        }
+      } catch (e) {
+        console.error('Predictions load failed', e);
+      }
+    }
+
+    document.getElementById('run-prediction-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('run-prediction-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + t('running');
+      try {
+        const res = await apiPost('/api/alerts/predictions/run', {});
+        toast(`${res.created} ` + t('newAlertCreated'), 'success');
+        loadPredictions();
+        loadAlerts();
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play"></i> ' + t('runModel');
+      }
+    });
+
+    async function loadAlerts() {
+      let url = `/api/alerts?page=${currentPage}&limit=15`;
+      if (currentSev) url += `&severity=${currentSev}`;
+      if (currentType) url += `&type=${currentType}`;
+      const res  = await apiGet(url);
+      const list = document.getElementById('alerts-list');
+
+      if (!res.alerts.length) {
+        list.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash" style="font-size:3rem;color:var(--text-muted)"></i><p data-i18n="noAlertsFound">No alerts found</p></div>';
+      } else {
+        list.innerHTML = res.alerts.map(a => `
+          <div class="alert-item ${a.is_read?'':'unread'}" id="alert-${a.id}">
+            <div class="alert-dot ${a.severity}"></div>
+            <div class="alert-body">
+              <div class="alert-msg">${a.message}</div>
+              <div class="alert-meta">
+                ${a.type==='prediction' ? '<span class="badge" style="background:#3b82f6;color:#fff">🤖 ' + t('predictionBadge') + '</span>' : `<span class="badge badge-${a.severity}">${SEV_LBL[a.severity]}</span>`}
+                &nbsp;·&nbsp; ${formatDate(a.created_at)}
+                ${a.device_name ? `&nbsp;·&nbsp; <i class="fas fa-desktop"></i> ${a.device_name}` : ''}
+              </div>
+            </div>
+            ${!a.is_read && user.role!=='user' ? `<button class="alert-read-btn" onclick="markRead(${a.id})"><i class="fas fa-check"></i> ` + t('readBtn') + `</button>` : ''}
+          </div>`).join('');
+      }
+      buildPagination(res.total, 15);
+    }
+
+    function buildPagination(total, limit) {
+      const pages  = Math.ceil(total/limit);
+      const parent = document.getElementById('pagination');
+      if(pages<=1){parent.innerHTML='';return;}
+      let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="changePage(${currentPage-1})">‹</button>`;
+      for(let i=1;i<=pages;i++) html+=`<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
+      html += `<button class="page-btn" ${currentPage===pages?'disabled':''} onclick="changePage(${currentPage+1})">›</button>`;
+      parent.innerHTML = html;
+    }
+
+    window.changePage = (p) => { currentPage=p; loadAlerts(); };
+    window.markRead   = async (id) => {
+      await apiPatch(`/api/alerts/${id}/read`, {});
+      document.getElementById(`alert-${id}`)?.classList.remove('unread');
+      toast(t('markedAsRead'),'success');
+    };
+
+    document.getElementById('mark-all-btn').addEventListener('click', async () => {
+      await apiPatch('/api/alerts/read-all', {});
+      toast(t('allMarkedAsRead'),'success'); loadAlerts();
+    });
+
+    document.querySelectorAll('.sev-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sev-tab').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSev  = btn.dataset.sev || '';
+        currentType = btn.dataset.type || '';
+        currentPage = 1;
+        loadAlerts();
+      });
+    });
+
+    window.addEventListener('languagechange', () => {
+      loadPredictions();
+      loadAlerts();
+    });
+
+    loadPredictions();
+    loadAlerts();
+  </script>
+</body>
+</html>

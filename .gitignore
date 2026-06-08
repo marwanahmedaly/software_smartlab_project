@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+npm-debug.log
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+data/
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# IDE
+.opencode/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Assignment
+assignment/
+
+# Presentations
+presentation/
+
+# Test files
+coverage/
+test.db-journal
