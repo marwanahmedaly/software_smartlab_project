@@ -21,7 +21,6 @@ uploads/*
 logs/
 
 # IDE
-.opencode/
 .vscode/
 .idea/
 
