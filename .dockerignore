@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Git
+.git
+.gitignore
+gitignore.txt
+
+# Documentation
+README.md
+PLAN.md
+docs/
+
+# Environment
+.env
+.env.example
+
+# Database (will be created at runtime or mounted)
+*.db
+*.db-shm
+*.db-wal
+
+# Uploads (mounted as volume)
+uploads/*
+!uploads/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# IDE
+.opencode/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Presentations
+presentation/
+
+# Test files
+tests/
+coverage/
