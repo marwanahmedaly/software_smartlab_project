@@ -39,7 +39,11 @@ assignment/
 
 # Presentations
 presentation/
+docs/superpowers/presentation/
 
 # Test files
+
+# OpenCode
+.opencode/
 coverage/
 test.db-journal

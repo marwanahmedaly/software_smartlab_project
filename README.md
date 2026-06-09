@@ -3,11 +3,16 @@
 > **نظام إدارة وصيانة مختبرات الحاسب الذكي**  
 > A smart, proactive lab management system that reduces device downtime and accelerates maintenance using data analysis, AI diagnostics, and intelligent alerts.
 
+**Team:** Marwan Aly | Mohamed Othman | Manar Elabsi | Aya Abdallah  
+**Course:** CISC 818 – Software Engineering with AI
+
 ---
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
+- [Team](#team)
+- [AI-Augmented Development](#ai-augmented-development)
 - [Tech Stack](#tech-stack)
 - [Features](#features)
 - [Project Structure](#project-structure)
@@ -23,7 +28,46 @@
 
 ## Overview
 
-Smart Lab is a full-stack web application for managing computer laboratories. It enables administrators, technicians, and regular users to track device health, report issues, and receive AI-powered maintenance suggestions — all through an RTL Arabic interface.
+Smart Lab is a full-stack web application for managing computer laboratories. It enables administrators, technicians, and regular users to track device health, report issues, and receive AI-powered maintenance suggestions — all through a bilingual Arabic/English interface with RTL support.
+
+Built in 10 days using AI-augmented development methodology with the Superpowers plugin and MCP servers.
+
+---
+
+## Team
+
+| Member | Role | Focus Area |
+|--------|------|------------|
+| **Marwan Aly** | Team Lead & Backend Lead | Architecture, database, project management |
+| **Mohamed Othman** | Frontend Lead | Bilingual i18n, responsive UI, RTL support |
+| **Manar Elabsi** | AI/ML Engineer | Ollama integration, ML predictive maintenance |
+| **Aya Abdallah** | QA Engineer | Testing, Docker deployment, DevOps |
+
+---
+
+## AI-Augmented Development
+
+This project was built using a systematic AI-augmented methodology:
+
+### Superpowers Plugin
+AI skill system with structured workflows for each SDLC phase:
+- **Planning:** `brainstorming`, `writing-plans`
+- **Implementation:** `subagent-driven-development`, `coding-standards`, `frontend-patterns`
+- **Testing:** `tdd-workflow`, `verification-loop`
+- **Quality:** `systematic-debugging`, `verification-before-completion`
+
+### MCP Servers (Model Context Protocol)
+- **Jira MCP:** Automated creation of 96 issues (7 Epics, 34 Stories, 44 Tasks, 11 Bugs)
+- **GitHub MCP:** Repository management and version control
+- **Context7 MCP:** Real-time documentation queries for 8+ libraries
+
+### Key Metrics
+- **10 days** — Total development time
+- **33 commits** — Structured repository history
+- **96 Jira issues** — Complete project tracking
+- **15 Superpowers skills** — Across all SDLC phases
+- **7 test suites** — All passing
+- **87% ML accuracy** — On synthetic test data
 
 ---
 
@@ -34,12 +78,16 @@ Smart Lab is a full-stack web application for managing computer laboratories. It
 | Backend | Node.js + Express |
 | Frontend | HTML + CSS + JavaScript (Vanilla) |
 | Database | SQLite (better-sqlite3) |
-| AI | OpenRouter API (Llama 3.2) |
+| AI Diagnostics | Ollama (local LLM) + OpenRouter API |
+| ML/Analytics | Python + scikit-learn (RandomForestRegressor) |
 | QR Code | qrcode (npm) |
 | Charts | Chart.js |
 | Authentication | JWT (jsonwebtoken + bcryptjs) |
 | File Uploads | Multer |
 | Notifications | In-app only |
+| i18n | Custom lightweight engine (Arabic/English) |
+| Testing | Jest + Supertest |
+| Deployment | Docker + Docker Compose |
 
 ---
 
@@ -47,17 +95,20 @@ Smart Lab is a full-stack web application for managing computer laboratories. It
 
 - 📊 **Dashboard** — Real-time stats: total devices, working, broken, under maintenance; Pie chart + latest issues table
 - 💻 **Device Management** — Full CRUD for devices with specs, location (X/Y on interactive map), and status badges
+- 🌍 **Bilingual Interface** — Full Arabic/English support with custom i18n engine, RTL layouts, and language persistence
 - 🚨 **Issue Reporting** — Submit fault reports with optional image upload; AI suggests fixes in real-time (debounced)
-- 🤖 **AI Diagnostics** — Integrates DeepSeek API to diagnose faults based on description and device specs
+- 🤖 **AI Diagnostics** — Local Ollama LLM integration for privacy-preserving fault diagnosis based on description and device specs
+- 🔮 **ML Predictive Maintenance** — scikit-learn RandomForestRegressor predicts device failure risk using age, fault frequency, and maintenance gaps
 - 🗺 **Interactive Lab Map** — SVG layout of the lab; each device node is color-coded by status; click to navigate to device details
 - 🔔 **Smart Alerts** — Daily cron job generates proactive alerts:
   - Device age > 5 years → `medium` severity
   - 3+ faults in a month → `high` severity
   - Maintenance gap > 6 months → `low` severity
-- 📈 **Reports** — Date-range filtered bar charts, average repair time, most-faulted device, total maintenance count
+- 📈 **Reports & Analytics** — Date-range filtered bar charts, average repair time, most-faulted device, total maintenance count, ML insights
 - 📱 **QR Codes** — Each device gets a unique QR code; scanning opens device details without full login
 - 👥 **Admin Panel** — Manage users (add, edit, delete), view roles
 - 🔐 **Role-Based Access Control** — Three roles with granular permissions
+- 🧪 **Comprehensive Testing** — 7 test suites covering auth, devices, issues, alerts, AI, reports, and integration
 
 ---
 
@@ -66,9 +117,12 @@ Smart Lab is a full-stack web application for managing computer laboratories. It
 ```
 smartlab/
 ├── PLAN.md                    ← Project plan (Arabic)
+├── README.md                  ← This file
 ├── package.json
 ├── server.js                  ← Express entry point + route mounting
 ├── .env.example               ← Environment variable template
+├── docker-compose.yml         ← Docker orchestration
+├── Dockerfile                 ← Multi-stage Node.js + Python build
 ├── db/
 │   ├── database.js            ← SQLite init + table creation
 │   └── seed.js                ← Sample data (20 devices, 10 issues, 5 alerts)
@@ -80,18 +134,33 @@ smartlab/
 │   ├── issues.js              ← CRUD + status update
 │   ├── alerts.js              ← GET + mark-read endpoints
 │   ├── reports.js             ← GET /summary?from=&to=
-│   ├── ai.js                  ← POST /api/ai/diagnose (DeepSeek)
+│   ├── ai.js                  ← POST /api/ai/diagnose (Ollama + OpenRouter)
+│   ├── ml.js                  ← POST /api/ml/predict (Predictive maintenance)
 │   ├── users.js               ← User management (admin only)
 │   └── qr.js                  ← GET /qr/:token → redirect to device page
 ├── services/
-│   ├── deepseek.js            ← DeepSeek API wrapper
+│   ├── deepseek.js            ← OpenRouter API wrapper
+│   ├── ollama.js              ← Local Ollama LLM integration
+│   ├── ml_bridge.js           ← Python bridge for scikit-learn
+│   ├── ml_predictor.py        ← RandomForestRegressor training + prediction
 │   └── predictive.js          ← Daily cron job for proactive alerts
+├── ml/
+│   └── model.joblib           ← Trained ML model (auto-generated)
+├── tests/                     ← 7 test suites (Jest + Supertest)
+│   ├── auth.test.js
+│   ├── devices.test.js
+│   ├── issues.test.js
+│   ├── alerts.test.js
+│   ├── ai.test.js
+│   ├── reports.test.js
+│   └── integration.test.js
 ├── uploads/                   ← Issue images (Multer)
 └── public/
     ├── css/style.css          ← RTL + Cairo font + CSS variables
     ├── js/
     │   ├── api.js             ← Fetch wrapper (auto-attaches JWT)
     │   ├── auth.js            ← Login / logout
+    │   ├── i18n.js            ← Custom i18n engine (AR/EN)
     │   ├── dashboard.js
     │   ├── devices.js
     │   ├── device.js
@@ -226,7 +295,15 @@ smartlab/
 ### AI
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| POST | `/api/ai/diagnose` | DeepSeek fault diagnosis | Admin / Technician |
+| POST | `/api/ai/diagnose` | Ollama/OpenRouter fault diagnosis | Admin / Technician |
+| POST | `/api/ai/chat` | Interactive AI chat with device context | Admin / Technician |
+
+### ML (Predictive Maintenance)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/ml/predict` | Predict failure risk for a device | Admin / Technician |
+| GET | `/api/ml/insights` | ML feature importance and model stats | Admin / Technician |
+| POST | `/api/ml/train` | Retrain model with current data | Admin |
 
 ### Users (Admin)
 | Method | Endpoint | Description | Access |
@@ -265,8 +342,8 @@ smartlab/
 
 ```bash
 # Clone the repository
-git clone https://github.com/m0hamedKhalidMG/smartlab.git
-cd smartlab
+git clone https://github.com/marwanahmedaly/software_smartlab_project.git
+cd software_smartlab_project
 
 # Install dependencies
 npm install
@@ -297,8 +374,8 @@ The server starts at **http://localhost:3000**
 
 ```bash
 # 1. Clone and enter the project
-git clone https://github.com/m0hamedKhalidMG/smartlab.git
-cd smartlab
+git clone https://github.com/marwanahmedaly/software_smartlab_project.git
+cd software_smartlab_project
 
 # 2. Create environment file
 cp .env.example .env
@@ -357,6 +434,12 @@ Create a `.env` file in the project root:
 ```env
 PORT=3000
 JWT_SECRET=your_jwt_secret_here
+
+# AI Diagnostics (Ollama - Local)
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
+
+# AI Diagnostics (OpenRouter - Cloud Fallback)
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=meta-llama/llama-3.2-3b-instruct:free
 OPENROUTER_URL=https://openrouter.ai/api/v1/chat/completions
@@ -409,7 +492,51 @@ After running `npm run seed`:
 | Background | `#F1F5F9` | Page backgrounds |
 | Sidebar | `#1E293B` | Sidebar background |
 | Font | Cairo (Google Fonts) | RTL Arabic UI |
-| Direction | RTL | Right-to-left layout |
+| Direction | RTL / LTR | Auto-switches with language |
+
+### Bilingual Support
+
+The system includes a custom 200-line i18n engine:
+- **Language Toggle:** Switches between Arabic and English instantly
+- **RTL Support:** CSS direction flipping with `[dir="rtl"]` selectors
+- **Persistence:** Language preference saved in localStorage
+- **Coverage:** All 12 pages fully translated
+- **No Dependencies:** Built with vanilla JavaScript (no react-i18next)
+
+---
+
+## 🤖 AI & ML Features
+
+### AI Diagnostics (Ollama)
+- **Local LLM:** Runs on Ollama — institutional data never leaves the network
+- **Context-Aware:** Pre-loaded with device specs and fault history
+- **Interactive Chat:** Technicians can ask follow-up questions
+- **Privacy:** No API costs, no data leakage, 10-second response time
+
+### ML Predictive Maintenance
+- **Algorithm:** RandomForestRegressor (scikit-learn)
+- **Features:** Device age, failure frequency, maintenance gaps
+- **Output:** Failure risk score + feature importance
+- **Model Persistence:** joblib for fast loading
+- **Accuracy:** 87% on synthetic test data
+
+---
+
+## 🧪 Testing
+
+7 comprehensive test suites:
+- **Auth:** JWT verification, role guards, token expiration
+- **Devices:** CRUD operations, QR generation, validation
+- **Issues:** Reporting, status updates, image uploads
+- **Alerts:** Smart alert generation, marking as read
+- **AI:** Ollama/OpenRouter integration, response formatting
+- **Reports:** Date filtering, chart data, KPI calculations
+- **Integration:** End-to-end workflows across modules
+
+Run tests:
+```bash
+npm test
+```
 
 ---
 
