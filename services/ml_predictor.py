@@ -21,7 +21,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 import joblib
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'smartlab.db')
+DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), '..', 'smartlab.db'))
 CSV_PATH = os.path.join(os.path.dirname(__file__), 'smartlab_training.csv')
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'smartlab_rf_model.pkl')
 SCALER_PATH = os.path.join(os.path.dirname(__file__), 'smartlab_rf_scaler.pkl')

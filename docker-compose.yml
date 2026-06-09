@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: smartlab-app
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       # Persist SQLite database
       - ./data:/app/data

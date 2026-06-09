@@ -1,13 +1,13 @@
 #!/bin/sh
 set -e
 
-# ── Auto-seed on first startup ────────────────────────────────
+# â”€â”€ Auto-seed on first startup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if [ ! -f /app/data/.seeded ]; then
-    echo "🌱 First startup detected — seeding database..."
+    echo "ðŸŒ± First startup detected â€” seeding database..."
     node db/seed.js
     touch /app/data/.seeded
-    echo "✅ Database seeded"
+    echo "âœ… Database seeded"
 fi
 
-# ── Start the application ─────────────────────────────────────
+# â”€â”€ Start the application â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 exec "$@"
