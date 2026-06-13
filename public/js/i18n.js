@@ -280,9 +280,6 @@ const translations = {
     profileUpdated: 'تم تحديث الملف الشخصي',
     incorrectPassword: 'كلمة المرور الحالية غير صحيحة',
 
-    // activity.html
-    activityLog: 'سجل الأنشطة',
-    activityLogs: 'سجلات الأنشطة',
     today: 'اليوم',
     thisWeek: 'هذا الأسبوع',
     action: 'الإجراء',
@@ -290,7 +287,6 @@ const translations = {
     entityId: 'المعرف',
     details: 'التفاصيل',
     ipAddress: 'عنوان IP',
-    noActivityFound: 'لا توجد أنشطة',
 
     // inventory.html
     inventory: 'المخزون',
@@ -639,9 +635,6 @@ const translations = {
     profileUpdated: 'Profile updated',
     incorrectPassword: 'Current password is incorrect',
 
-    // activity.html
-    activityLog: 'Activity Log',
-    activityLogs: 'Activity Logs',
     today: 'Today',
     thisWeek: 'This Week',
     action: 'Action',
@@ -649,7 +642,6 @@ const translations = {
     entityId: 'Entity ID',
     details: 'Details',
     ipAddress: 'IP Address',
-    noActivityFound: 'No activity found',
 
     // inventory.html
     inventory: 'Inventory',

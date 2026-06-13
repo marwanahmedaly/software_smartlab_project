@@ -52,7 +52,6 @@ app.use('/api/v1/ai',          aiLimiter, require('./routes/ai'));
 app.use('/api/v1/users',       require('./routes/users'));
 app.use('/api/v1/export',      require('./routes/export'));
 app.use('/api/v1/inventory',   require('./routes/inventory'));
-app.use('/api/v1/activity',    require('./routes/activity'));
 app.use('/api/v1/search',      require('./routes/search'));
 app.use('/api/v1/calendar',    require('./routes/calendar'));
 app.use('/qr',                 require('./routes/qr'));
@@ -67,7 +66,6 @@ app.use('/api/ai',          aiLimiter, require('./routes/ai'));
 app.use('/api/users',       require('./routes/users'));
 app.use('/api/export',      require('./routes/export'));
 app.use('/api/inventory',   require('./routes/inventory'));
-app.use('/api/activity',    require('./routes/activity'));
 app.use('/api/search',      require('./routes/search'));
 app.use('/api/calendar',    require('./routes/calendar'));
 
