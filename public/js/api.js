@@ -77,11 +77,66 @@ export function toast(msg, type = 'info') {
   setTimeout(() => t.remove(), 3500);
 }
 
+/** WebSocket connection for real-time notifications */
+let socket = null;
+export function connectWebSocket() {
+  if (socket) return socket;
+  const token = getToken();
+  if (!token) return null;
+  try {
+    socket = new WebSocket(`ws://${window.location.host}`);
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'notification') {
+        toast(data.message, data.severity || 'info');
+      }
+    };
+    socket.onerror = () => { socket = null; };
+  } catch {
+    socket = null;
+  }
+  return socket;
+}
+
+/** Dark mode helpers */
+export function initDarkMode() {
+  const saved = localStorage.getItem('darkMode');
+  if (saved === 'true' || (saved === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+}
+export function toggleDarkMode() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+}
+
+/** Download blob as file */
+export function downloadBlob(blob, filename) {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 /** Format date to readable format */
 export function formatDate(dateStr) {
   if (!dateStr) return '—';
   const lang = localStorage.getItem('lang') || 'en';
   return new Date(dateStr).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/** Format date to MM/DD/YYYY (US format) */
+export function formatDateUS(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const y = d.getFullYear();
+  return `${m}/${day}/${y}`;
 }
 
 /** Page guard — redirect to login if not authenticated */

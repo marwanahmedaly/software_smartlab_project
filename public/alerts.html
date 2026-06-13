@@ -141,9 +141,19 @@
   </header>
 
   <main class="main-content">
-    <div class="page-header">
+    <div class="page-header" style="justify-content:space-between;align-items:center">
       <h2 class="page-title" data-i18n="predictiveAlerts">Predictive Alerts</h2>
-      <button class="btn btn-outline" id="mark-all-btn" data-i18n="markAllAsRead"><i class="fas fa-check-double"></i> Mark all as read</button>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-outline btn-sm" id="settings-btn" data-roles="admin"><i class="fas fa-cog"></i> <span data-i18n="alertSettings">Settings</span></button>
+        <button class="btn btn-outline" id="mark-all-btn" data-i18n="markAllAsRead"><i class="fas fa-check-double"></i> Mark all as read</button>
+      </div>
+    </div>
+    <div id="settings-panel" class="card" style="display:none;margin-bottom:1rem;padding:1rem">
+      <div class="form-group" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <label data-i18n="mlThreshold">ML Threshold (%):</label>
+        <input type="number" id="ml-threshold" class="form-control" style="width:80px" min="0" max="100" />
+        <button class="btn btn-primary btn-sm" id="save-settings-btn" data-i18n="save">Save</button>
+      </div>
     </div>
 
     <!-- AI Predictions Panel -->
@@ -170,7 +180,7 @@
   </main>
 
   <script type="module">
-    import { requireAuth, apiGet, apiPost, apiPatch, fillTopbar, setActiveNav, logout, toast, formatDate, filterSidebar } from '/js/api.js';
+    import { requireAuth, apiGet, apiPost, apiPatch, apiDel, fillTopbar, setActiveNav, logout, toast, formatDate, filterSidebar } from '/js/api.js';
     import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
 
     const user = requireAuth(); if(!user) throw new Error('stop');
@@ -259,6 +269,7 @@
               </div>
             </div>
             ${!a.is_read && user.role!=='user' ? `<button class="alert-read-btn" onclick="markRead(${a.id})"><i class="fas fa-check"></i> ` + t('readBtn') + `</button>` : ''}
+            ${user.role!=='user' ? `<button class="alert-read-btn" onclick="dismissAlert(${a.id})" style="color:var(--danger);margin-left:.5rem"><i class="fas fa-times"></i> ` + t('dismissAlert') + `</button>` : ''}
           </div>`).join('');
       }
       buildPagination(res.total, 15);
@@ -280,6 +291,31 @@
       document.getElementById(`alert-${id}`)?.classList.remove('unread');
       toast(t('markedAsRead'),'success');
     };
+    window.dismissAlert = async (id) => {
+      if (!confirm(t('confirmDeleteDevice'))) return;
+      await apiDel(`/api/alerts/${id}`);
+      toast(t('alertDismissed'), 'success');
+      loadAlerts();
+    };
+
+    document.getElementById('settings-btn')?.addEventListener('click', () => {
+      const panel = document.getElementById('settings-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
+      const threshold = Number(document.getElementById('ml-threshold').value);
+      try {
+        await apiPut('/api/alerts/settings', { ml_threshold: threshold });
+        toast(t('settingsSaved'), 'success');
+      } catch (err) { toast(err.message, 'error'); }
+    });
+    async function loadSettings() {
+      try {
+        const data = await apiGet('/api/alerts/settings');
+        document.getElementById('ml-threshold').value = data.ml_threshold;
+      } catch (err) { console.error(err); }
+    }
+    loadSettings();
 
     document.getElementById('mark-all-btn').addEventListener('click', async () => {
       await apiPatch('/api/alerts/read-all', {});

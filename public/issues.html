@@ -49,7 +49,7 @@
   </header>
 
   <main class="main-content">
-    <h2 class="page-title" style="margin-bottom:1rem" data-i18n="issuesAndReports">Issues and Reports</h2>
+    <h2 class="page-title" style="margin-bottom:1rem" id="page-title" data-i18n="issuesAndReports">Issues and Reports</h2>
 
     <div class="grid grid-1-2">
       <!-- Submit Issue Form -->
@@ -109,17 +109,24 @@
       <div class="card">
         <div class="card-header">
           <span class="card-title"><i class="fas fa-list" style="color:var(--danger)"></i> <span data-i18n="myIssues">My Issues</span></span>
-          <select class="form-control" id="status-filter" style="max-width:150px">
-            <option value="" data-i18n="all">All</option>
-            <option value="open" data-i18n="open">Open</option>
-            <option value="in_progress" data-i18n="in_progress">In Progress</option>
-            <option value="resolved" data-i18n="resolved">Resolved</option>
-          </select>
+          <div style="display:flex;gap:.5rem">
+            <select class="form-control" id="status-filter" style="max-width:150px">
+              <option value="" data-i18n="all">All</option>
+              <option value="open" data-i18n="open">Open</option>
+              <option value="in_progress" data-i18n="in_progress">In Progress</option>
+              <option value="resolved" data-i18n="resolved">Resolved</option>
+            </select>
+            <select class="form-control" id="assigned-filter" style="max-width:180px">
+              <option value="" data-i18n="allIssues">All Issues</option>
+              <option value="mine" data-i18n="myAssignedIssues">My Assigned Issues</option>
+              <option value="unassigned" data-i18n="unassignedIssues">Unassigned Issues</option>
+            </select>
+          </div>
         </div>
         <div class="table-wrapper">
           <table>
             <thead>
-              <tr><th data-i18n="device">Device</th><th data-i18n="issue">Issue</th><th data-i18n="priority">Priority</th><th data-i18n="status">Status</th><th data-i18n="date">Date</th><th data-i18n="action">Action</th></tr>
+              <tr><th data-i18n="device">Device</th><th data-i18n="issue">Issue</th><th data-i18n="priority">Priority</th><th data-i18n="status">Status</th><th data-i18n="assignedTechnician">Assigned</th><th data-i18n="action">Action</th></tr>
             </thead>
             <tbody id="issues-tbody">
               <tr><td colspan="6" style="text-align:center;padding:2rem"><i class="fas fa-spinner fa-spin"></i></td></tr>
@@ -164,6 +171,26 @@
         </div>
       </div>
     </div>
+
+    <!-- Assign Modal -->
+    <div class="modal-overlay hidden" id="assign-modal">
+      <div class="modal" style="max-width:420px">
+        <div class="modal-header"><span>Assign to Technician</span><button class="modal-close" id="assign-modal-close"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <input type="hidden" id="assign-issue-id" />
+          <div class="form-group"><label class="form-label">Select Technician</label>
+            <select class="form-control" id="assign-tech"></select>
+          </div>
+          <div style="margin-top:.75rem">
+            <button class="btn btn-outline btn-sm" id="auto-assign-btn"><i class="fas fa-magic"></i> Auto-assign (least busy)</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="assign-modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="assign-save"><i class="fas fa-user-check"></i> Assign</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script type="module">
@@ -185,6 +212,16 @@
     const PRIORI    = { low:'Low', medium:'Medium', high:'High' };
     let currentPage = 1;
     let currentIssues = [];
+    let technicians = [];
+    const isAdmin = user.role === 'admin';
+    const isTech = user.role === 'technician';
+
+    // Update page title for technician
+    if (isTech) {
+      const titleEl = document.getElementById('page-title');
+      titleEl.textContent = t('myIssues');
+      titleEl.dataset.i18n = 'myIssues';
+    }
 
     // Load devices into Select
     const deviceSel = document.getElementById('f-device');
@@ -240,10 +277,42 @@
       } catch(err) { toast(err.message, 'error'); }
     });
 
+    // Load technicians for assignment
+    async function loadTechnicians() {
+      if (!canAI) return;
+      try {
+        const res = await apiGet('/api/users');
+        technicians = res.users.filter(u => u.role === 'technician');
+        const sel = document.getElementById('assign-tech');
+        sel.innerHTML = '<option value="">— Select Technician —</option>';
+        technicians.forEach(t => {
+          sel.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+        });
+      } catch(err) { console.error('Failed to load technicians', err); }
+    }
+
+    // Role-specific: Technician default filter
+    const assignedFilter = document.getElementById('assigned-filter');
+    if (isTech) {
+      // Hide assigned filter for technicians (they only see their own)
+      assignedFilter.style.display = 'none';
+    }
+
     // Load table
     async function loadIssues() {
       const status = document.getElementById('status-filter').value;
-      const res = await apiGet(`/api/issues?page=${currentPage}&limit=8${status?'&status='+status:''}`);
+      let url = `/api/issues?page=${currentPage}&limit=8`;
+      if (status) url += `&status=${status}`;
+      // Technician: always filter to their assigned issues
+      if (isTech) {
+        url += `&assigned_to_id=${user.id}`;
+      } else {
+        const assigned = document.getElementById('assigned-filter').value;
+        if (assigned === 'mine' && user.id) url += `&assigned_to_id=${user.id}`;
+        if (assigned === 'unassigned') url += `&assigned_to_id=0`;
+      }
+
+      const res = await apiGet(url);
       const tbody = document.getElementById('issues-tbody');
       currentIssues = res.issues || [];
 
@@ -256,8 +325,13 @@
             <td>${i.issue_type}</td>
             <td><span class="badge badge-${i.priority}" data-i18n="${i.priority}">${PRIORI[i.priority]}</span></td>
             <td><span class="badge ${STAT_MAP[i.status]}" data-i18n="${i.status}">${STAT_LBL[i.status]}</span></td>
-            <td>${formatDate(i.created_at)}</td>
-            <td onclick="event.stopPropagation()">${canAI && i.status!=='resolved' ? `<button class="btn btn-outline btn-sm btn-icon" onclick="openStatus(${i.id},'${i.status}')" title="Update" data-i18n-title="update"><i class="fas fa-pen-to-square"></i></button>`:''}</td>
+            <td>${i.assigned_to_name ? '<span class="badge badge-info"><i class="fas fa-user"></i> ' + i.assigned_to_name + '</span>' : '<span class="badge badge-open">Unassigned</span>'}</td>
+            <td onclick="event.stopPropagation()">
+              <div style="display:flex;gap:.25rem">
+                ${canAI && i.status!=='resolved' ? `<button class="btn btn-outline btn-sm btn-icon" onclick="openStatus(${i.id},'${i.status}')" title="Update" data-i18n-title="update"><i class="fas fa-pen-to-square"></i></button>`:''}
+                ${isAdmin && i.status!=='resolved' ? `<button class="btn btn-outline btn-sm btn-icon" onclick="openAssign(${i.id})" title="Assign" style="color:var(--primary)"><i class="fas fa-user-plus"></i></button>`:''}
+              </div>
+            </td>
           </tr>`).join('');
       }
       buildPagination(res.total, res.limit);
@@ -278,6 +352,7 @@
 
     window.changePage = (p) => { currentPage = p; loadIssues(); };
     document.getElementById('status-filter').addEventListener('change', () => { currentPage=1; loadIssues(); });
+    document.getElementById('assigned-filter').addEventListener('change', () => { currentPage=1; loadIssues(); });
 
     // Issue detail modal
     const detailModal = document.getElementById('detail-modal');
@@ -307,6 +382,10 @@
           <label class="form-label" data-i18n="priority">Priority</label>
           <div><span class="badge badge-${i.priority}" data-i18n="${i.priority}">${PRIORI[i.priority]}</span></div>
         </div>
+        <div style="margin-bottom:1rem">
+          <label class="form-label">Assigned Technician</label>
+          <div>${i.assigned_to_name ? '<span class="badge badge-info"><i class="fas fa-user"></i> ' + i.assigned_to_name + '</span>' : '<span class="badge badge-open">Unassigned</span>'}</div>
+        </div>
         ${i.resolution_notes ? `<div style="margin-bottom:1rem"><label class="form-label" data-i18n="resolutionNotes">Resolution Notes</label><div style="background:#f0fdf4;padding:.75rem;border-radius:8px;border:1px solid #bbf7d0;line-height:1.7">${i.resolution_notes}</div></div>` : ''}
         ${i.ai_suggestions ? `<div style="margin-bottom:1rem"><label class="form-label"><i class="fas fa-robot" style="color:var(--primary)"></i> <span data-i18n="aiSuggestions">AI Suggestions</span></label><div style="background:#eff6ff;padding:.75rem;border-radius:8px;border:1px solid #bfdbfe;line-height:1.7;white-space:pre-wrap">${i.ai_suggestions}</div></div>` : ''}
         ${i.image_path ? `<div style="margin-bottom:1rem"><label class="form-label" data-i18n="attachedImage">Attached Image</label><img src="${i.image_path}" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" /></div>` : ''}
@@ -314,7 +393,7 @@
           <div><span data-i18n="dateLabel">📅 Date:</span> ${formatDate(i.created_at)}</div>
           ${i.resolved_at ? `<div><span data-i18n="resolvedDateLabel">✅ Resolved Date:</span> ${formatDate(i.resolved_at)}</div>` : ''}
           <div><span data-i18n="reporterLabel">👤 Reporter:</span> ${i.reporter_name||'—'}</div>
-          ${i.resolver_name ? `<div><span data-i18n="technicianLabel">🔧 Technician:</span> ${i.resolver_name}</div>` : ''}
+          ${i.resolver_name ? `<div><span data-i18n="technicianLabel">🔧 Resolved By:</span> ${i.resolver_name}</div>` : ''}
         </div>
       `;
       detailModal.classList.remove('hidden');
@@ -344,11 +423,42 @@
       } catch(e) { toast(e.message, 'error'); }
     });
 
+    // Assign modal
+    const assignModal = document.getElementById('assign-modal');
+    window.openAssign = (id) => {
+      document.getElementById('assign-issue-id').value = id;
+      document.getElementById('assign-tech').value = '';
+      assignModal.classList.remove('hidden');
+    };
+    document.getElementById('assign-modal-close').addEventListener('click', () => assignModal.classList.add('hidden'));
+    document.getElementById('assign-modal-cancel').addEventListener('click', () => assignModal.classList.add('hidden'));
+    document.getElementById('assign-save').addEventListener('click', async () => {
+      const id = document.getElementById('assign-issue-id').value;
+      const techId = document.getElementById('assign-tech').value;
+      if (!techId) { toast('Please select a technician', 'error'); return; }
+      try {
+        await apiPatch(`/api/issues/${id}/assign`, { assigned_to_id: Number(techId) });
+        assignModal.classList.add('hidden');
+        toast('Issue assigned successfully', 'success');
+        loadIssues();
+      } catch(e) { toast(e.message, 'error'); }
+    });
+    document.getElementById('auto-assign-btn').addEventListener('click', async () => {
+      const id = document.getElementById('assign-issue-id').value;
+      try {
+        const res = await apiPost(`/api/issues/${id}/auto-assign`);
+        assignModal.classList.add('hidden');
+        toast(res.message, 'success');
+        loadIssues();
+      } catch(e) { toast(e.message, 'error'); }
+    });
+
     window.addEventListener('languagechange', () => {
       loadIssues();
     });
 
     loadIssues();
+    loadTechnicians();
   </script>
 </body>
 </html>

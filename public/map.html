@@ -138,6 +138,9 @@
 
     document.getElementById('refresh-btn').addEventListener('click', loadMap);
 
+    // Auto-refresh map every 30 seconds
+    setInterval(loadMap, 30000);
+
     window.addEventListener('languagechange', () => {
       loadMap();
     });

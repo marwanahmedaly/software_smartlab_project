@@ -21,6 +21,25 @@
   --radius-sm:   8px;
 }
 
+/* ── Dark Mode ─────────────────────────────────── */
+body.dark {
+  --bg:          #0F172A;
+  --card-bg:     #1E293B;
+  --text:        #F1F5F9;
+  --text-muted:  #94A3B8;
+  --border:      #334155;
+  --shadow:      0 2px 8px rgba(0,0,0,.3);
+}
+body.dark .sidebar { background: #0F172A; border-right: 1px solid var(--border); }
+body.dark .topbar { background: var(--card-bg); border-bottom: 1px solid var(--border); }
+body.dark .stat-card { background: var(--card-bg); }
+body.dark .table-wrapper { background: var(--card-bg); }
+body.dark table thead { background: #334155; }
+body.dark .modal-overlay { background: rgba(0,0,0,.7); }
+body.dark .modal { background: var(--card-bg); }
+body.dark input, body.dark select, body.dark textarea { background: #334155; color: var(--text); border-color: var(--border); }
+body.dark .form-group label { color: var(--text-muted); }
+
 /* ── Reset & Base ──────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

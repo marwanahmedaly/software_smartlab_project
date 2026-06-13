@@ -66,10 +66,10 @@
       <div class="table-wrapper">
         <table>
           <thead>
-            <tr><th data-i18n="number">#</th><th data-i18n="device">Device</th><th data-i18n="technician">Technician</th><th data-i18n="notes">Notes</th><th data-i18n="date">Date</th></tr>
+            <tr><th data-i18n="number">#</th><th data-i18n="device">Device</th><th data-i18n="issue">Issue</th><th data-i18n="technician">Technician</th><th data-i18n="status">Status</th><th data-i18n="notes">Notes</th><th data-i18n="date">Date</th></tr>
           </thead>
           <tbody id="maint-tbody">
-            <tr><td colspan="5" style="text-align:center;padding:2rem"><i class="fas fa-spinner fa-spin"></i></td></tr>
+            <tr><td colspan="7" style="text-align:center;padding:2rem"><i class="fas fa-spinner fa-spin"></i></td></tr>
           </tbody>
         </table>
       </div>
@@ -78,7 +78,7 @@
   </main>
 
   <script type="module">
-    import { requireAuth, apiGet, fillTopbar, setActiveNav, logout, toast, formatDate, filterSidebar, guardPage } from '/js/api.js';
+    import { requireAuth, apiGet, fillTopbar, setActiveNav, logout, toast, formatDateUS, filterSidebar, guardPage } from '/js/api.js';
     import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
 
     const user = requireAuth(); if(!user) throw new Error('stop');
@@ -106,16 +106,21 @@
       const res  = await apiGet(url);
       const tbody = document.getElementById('maint-tbody');
 
+      const STATUS_LABEL = { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved' };
+      const STATUS_MAP = { open: 'badge-open', in_progress: 'badge-in_progress', resolved: 'badge-resolved' };
+
       if (!res.logs.length) {
-        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-inbox"></i><p data-i18n="noRecordsFound">No records found</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-inbox"></i><p data-i18n="noRecordsFound">No records found</p></div></td></tr>';
       } else {
         tbody.innerHTML = res.logs.map((l,i) => `
           <tr>
             <td>${(currentPage-1)*12 + i + 1}</td>
             <td>${l.device_name||'—'}</td>
+            <td>${l.issue_type||'—'}</td>
             <td>${l.technician_name||l.performed_by_name||'—'}</td>
-            <td style="max-width:300px;white-space:normal">${l.notes||'—'}</td>
-            <td>${formatDate(l.performed_at||l.created_at)}</td>
+            <td><span class="badge ${STATUS_MAP[l.status]||'badge-open'}">${STATUS_LABEL[l.status]||l.status}</span></td>
+            <td style="max-width:300px;white-space:normal">${l.notes||l.resolution_notes||'—'}</td>
+            <td>${formatDateUS(l.performed_at||l.resolved_at||l.created_at)}</td>
           </tr>`).join('');
       }
       buildPagination(res.total, 12);

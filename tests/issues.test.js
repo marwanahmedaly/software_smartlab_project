@@ -364,9 +364,9 @@ describe('Issue Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('in_progress');
 
-      // Device should still be broken
+      // Device should be in maintenance mode
       const updatedDevice = db.prepare('SELECT * FROM devices WHERE id = ?').get(device.id);
-      expect(updatedDevice.status).toBe('broken');
+      expect(updatedDevice.status).toBe('maintenance');
 
       // No maintenance log should be created
       const log = db.prepare('SELECT * FROM maintenance_logs WHERE issue_id = ?').get(issue.id);

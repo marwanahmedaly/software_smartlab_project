@@ -31,7 +31,7 @@
       <span>Smart Lab</span>
     </div>
     <nav class="sidebar-nav">
-      <a href="/dashboard.html"    class="nav-item" data-page="dashboard.html"   data-roles="admin,technician">        <i class="fas fa-gauge-high"></i>    <span data-i18n="dashboard">Dashboard</span> </a>
+      <a href="/dashboard.html"    class="nav-item active" data-page="dashboard.html"   data-roles="admin,technician">        <i class="fas fa-gauge-high"></i>    <span data-i18n="dashboard">Dashboard</span> </a>
       <a href="/devices.html"      class="nav-item" data-page="devices.html"     data-roles="admin,technician">        <i class="fas fa-desktop"></i>       <span data-i18n="devices">Devices</span>     </a>
       <a href="/issues.html"       class="nav-item" data-page="issues.html"      data-roles="admin,technician,user">   <i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span>  </a>
       <a href="/maintenance.html"  class="nav-item" data-page="maintenance.html" data-roles="admin,technician">        <i class="fas fa-screwdriver-wrench"></i> <span data-i18n="maintenance">Maintenance</span>   </a>
@@ -39,6 +39,8 @@
       <a href="/alerts.html"       class="nav-item" data-page="alerts.html"      data-roles="admin,technician">        <i class="fas fa-bell"></i>          <span data-i18n="alerts">Alerts</span>   </a>
       <a href="/ai.html"           class="nav-item" data-page="ai.html"          data-roles="admin,technician,user">   <i class="fas fa-robot"></i>         <span data-i18n="aiAssistant">AI Assistant</span>    </a>
       <a href="/reports.html"      class="nav-item" data-page="reports.html"     data-roles="admin,technician">        <i class="fas fa-chart-bar"></i>     <span data-i18n="reports">Reports</span>    </a>
+      <a href="/calendar.html"     class="nav-item" data-page="calendar.html"    data-roles="admin,technician">        <i class="fas fa-calendar-days"></i> <span data-i18n="maintenanceCalendar">Calendar</span></a>
+      <a href="/activity.html"     class="nav-item" data-page="activity.html"    data-roles="admin">         <i class="fas fa-list-ul"></i> <span data-i18n="activityLog">Activity</span> </a>
       <a href="/admin.html"        class="nav-item" data-page="admin.html" id="admin-link" data-roles="admin">         <i class="fas fa-users-cog"></i> <span data-i18n="users">Users</span> </a>
     </nav>
     <div class="sidebar-footer">Smart Lab &copy; 2026</div>
@@ -49,11 +51,12 @@
     <span class="topbar-title" data-i18n="dashboard">Dashboard</span>
     <div class="topbar-actions">
       <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <button class="dark-mode-btn" id="dark-mode-btn" title="Toggle Dark Mode" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:.35rem .85rem;border-radius:8px;cursor:pointer;font-size:.85rem;margin-left:.5rem"><i class="fas fa-moon"></i></button>
       <div class="alert-bell" onclick="window.location='/alerts.html'">
         <i class="fas fa-bell"></i>
         <span class="badge-count" id="unread-count" style="display:none">0</span>
       </div>
-      <div class="topbar-user" id="user-menu">
+      <div class="topbar-user" id="user-menu" onclick="window.location='/profile.html'" style="cursor:pointer">
         <div class="avatar" id="user-avatar">U</div>
         <span id="user-name">User</span>
         <i class="fas fa-chevron-down" style="font-size:.75rem;color:#94A3B8"></i>
@@ -101,39 +104,60 @@
       </div>
     </div>
 
-    <!-- Charts + Latest Issues -->
-    <div class="grid grid-1-2" style="margin-bottom:1.25rem">
-
-      <!-- Pie Chart -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title"><i class="fas fa-chart-pie" style="color:var(--primary)"></i> <span data-i18n="deviceStatusDistribution">Device Status Distribution</span></span>
-        </div>
-        <canvas id="pie-chart" height="220"></canvas>
+    <!-- Pie Chart (Centered) -->
+    <div class="card" style="max-width:480px;margin:0 auto 1.25rem;text-align:center">
+      <div class="card-header" style="justify-content:center">
+        <span class="card-title"><i class="fas fa-chart-pie" style="color:var(--primary)"></i> <span data-i18n="deviceStatusDistribution">Device Status Distribution</span></span>
       </div>
+      <canvas id="pie-chart" height="220"></canvas>
+    </div>
 
-      <!-- Latest Issues -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title"><i class="fas fa-triangle-exclamation" style="color:var(--danger)"></i> <span data-i18n="latestIssues">Latest Issues</span></span>
-          <a href="/issues.html" class="btn btn-outline btn-sm" data-i18n="showAll">Show All</a>
-        </div>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th data-i18n="device">Device</th>
-                <th data-i18n="problem">Problem</th>
-                <th data-i18n="priority">Priority</th>
-                <th data-i18n="status">Status</th>
-                <th data-i18n="date">Date</th>
-              </tr>
-            </thead>
-            <tbody id="issues-tbody">
-              <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i></td></tr>
-            </tbody>
-          </table>
-        </div>
+    <!-- Latest Issues (Admin only) -->
+    <div class="card" id="latest-issues-card" style="margin-bottom:1.25rem">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-triangle-exclamation" style="color:var(--danger)"></i> <span data-i18n="latestIssues">Latest Issues</span></span>
+        <a href="/issues.html" class="btn btn-outline btn-sm" data-i18n="showAll">Show All</a>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="device">Device</th>
+              <th data-i18n="problem">Problem</th>
+              <th data-i18n="priority">Priority</th>
+              <th data-i18n="status">Status</th>
+              <th data-i18n="date">Date</th>
+            </tr>
+          </thead>
+          <tbody id="issues-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- My Assigned Issues (Technicians only) -->
+    <div class="card" id="assigned-card" style="display:none">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-user-check" style="color:var(--primary)"></i> <span data-i18n="myAssignedIssues">My Assigned Issues</span></span>
+        <a href="/issues.html" class="btn btn-outline btn-sm" data-i18n="showAll">Show All</a>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="device">Device</th>
+              <th data-i18n="problem">Problem</th>
+              <th data-i18n="priority">Priority</th>
+              <th data-i18n="status">Status</th>
+              <th data-i18n="date">Date</th>
+              <th data-i18n="action">Action</th>
+            </tr>
+          </thead>
+          <tbody id="assigned-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i></td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -147,10 +171,50 @@
         <div style="text-align:center;padding:1.5rem;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> <span data-i18n="loading">Loading...</span></div>
       </div>
     </div>
+
+    <!-- Issue Detail Modal -->
+    <div class="modal-overlay hidden" id="issue-modal">
+      <div class="modal" style="max-width:560px">
+        <div class="modal-header">
+          <span data-i18n="issueDetails">Issue Details</span>
+          <button class="modal-close" id="issue-modal-close" data-i18n-title="close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="issue-modal-body"></div>
+        <div class="modal-footer" id="issue-modal-footer">
+          <button class="btn btn-outline" id="issue-modal-close-btn" data-i18n="close">Close</button>
+          <button class="btn btn-primary hidden" id="issue-modal-update-btn" onclick="openResolveModalFromDetail()" data-i18n="updateStatus">Update Status</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resolve Modal -->
+    <div class="modal-overlay hidden" id="resolve-modal">
+      <div class="modal" style="max-width:420px">
+        <div class="modal-header"><span data-i18n="resolveIssue">Resolve Issue</span><button class="modal-close" id="resolve-modal-close" data-i18n-title="close"><i class="fas fa-times"></i></button></div>
+        <div class="modal-body">
+          <input type="hidden" id="resolve-issue-id" />
+          <div class="form-group">
+            <label class="form-label" data-i18n="newStatus">New Status</label>
+            <select class="form-control" id="resolve-status">
+              <option value="in_progress" data-i18n="in_progress">In Progress</option>
+              <option value="resolved" data-i18n="resolved" selected>Resolved</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="maintenanceNotes">Maintenance Notes</label>
+            <textarea class="form-control" id="resolve-notes" rows="3" placeholder="Describe what was done..." data-i18n-placeholder="maintenanceNotesPlaceholder"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="resolve-modal-cancel" data-i18n="cancel">Cancel</button>
+          <button class="btn btn-primary" id="resolve-save"><i class="fas fa-save"></i> <span data-i18n="save">Save</span></button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script type="module">
-    import { requireAuth, apiGet, fillTopbar, setActiveNav, logout, formatDate, filterSidebar } from '/js/api.js';
+    import { requireAuth, apiGet, apiPatch, fillTopbar, setActiveNav, logout, toast, formatDate, filterSidebar, initDarkMode, toggleDarkMode } from '/js/api.js';
     import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
 
     const user = requireAuth();
@@ -160,6 +224,7 @@
     setActiveNav();
     applyTranslations();
     filterSidebar();
+    initDarkMode();
 
     // Language switcher
     document.getElementById('lang-switcher').addEventListener('click', () => {
@@ -172,6 +237,7 @@
     });
 
     document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('dark-mode-btn').addEventListener('click', toggleDarkMode);
 
     // Date
     function updateDate() {
@@ -208,21 +274,160 @@
           options: { plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo', size: 13 } } } }, cutout: '65%' },
         });
 
-        // Latest 5 issues
-        const issRes = await apiGet('/api/issues?limit=5');
-        const tbody  = document.getElementById('issues-tbody');
-        if (!issRes.issues.length) {
-          tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-inbox"></i><p>' + t('noIssues') + '</p></td></tr>';
+        // My Assigned Issues (for technicians) OR Latest Issues (for admin)
+        let myAssignedIssues = [];
+        const latestIssuesCard = document.getElementById('latest-issues-card');
+
+        if (user.role === 'technician') {
+          // Hide admin's "Latest Issues" for technician
+          if (latestIssuesCard) latestIssuesCard.style.display = 'none';
+
+          const assignedCard = document.getElementById('assigned-card');
+          const assignedBody = document.getElementById('assigned-tbody');
+          try {
+            const myRes = await apiGet(`/api/issues?limit=5&assigned_to_id=${user.id}&status=open`);
+            myAssignedIssues = myRes.issues || [];
+            if (myAssignedIssues.length > 0) {
+              assignedCard.style.display = 'block';
+              assignedBody.innerHTML = myAssignedIssues.map((i, idx) => `
+                <tr style="cursor:pointer" onclick="openIssueDetail(${idx})" title="Click to view details">
+                  <td><span style="color:var(--primary);font-weight:600">${i.device_name || '—'}</span></td>
+                  <td>${i.issue_type}</td>
+                  <td><span class="badge badge-${i.priority}">${PRIORITY_LABEL[i.priority]}</span></td>
+                  <td><span class="badge badge-${i.status}">${STATUS_LABEL[i.status]}</span></td>
+                  <td>${formatDate(i.created_at)}</td>
+                  <td onclick="event.stopPropagation()">
+                    <div style="display:flex;gap:.25rem">
+                      ${i.status === 'open' ? `<button class="btn btn-outline btn-sm btn-icon" onclick="quickUpdateStatus(${i.id}, 'in_progress', '${i.status}')" title="Start Work" style="color:var(--warning)"><i class="fas fa-play"></i></button>` : ''}
+                      ${i.status !== 'resolved' ? `<button class="btn btn-outline btn-sm btn-icon" onclick="openResolveModal(${i.id})" title="Resolve" style="color:var(--success)"><i class="fas fa-check"></i></button>` : ''}
+                    </div>
+                  </td>
+                </tr>`).join('');
+            } else {
+              assignedCard.style.display = 'block';
+              assignedBody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-check-circle" style="color:var(--success)"></i><p>' + t('noIssues') + '</p></td></tr>';
+            }
+          } catch (e) { console.error('Failed to load assigned issues', e); }
         } else {
-          tbody.innerHTML = issRes.issues.map(i => `
-            <tr>
-              <td><a href="/device.html?id=${i.device_id}" style="color:var(--primary);font-weight:600">${i.device_name || '—'}</a></td>
-              <td>${i.issue_type}</td>
-              <td><span class="badge badge-${i.priority}">${PRIORITY_LABEL[i.priority]}</span></td>
-              <td><span class="badge badge-${i.status}">${STATUS_LABEL[i.status]}</span></td>
-              <td>${formatDate(i.created_at)}</td>
-            </tr>`).join('');
+          // Admin: show "Latest Issues" (all issues)
+          const issRes = await apiGet('/api/issues?limit=5');
+          const tbody  = document.getElementById('issues-tbody');
+          if (!issRes.issues.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-inbox"></i><p>' + t('noIssues') + '</p></td></tr>';
+          } else {
+            tbody.innerHTML = issRes.issues.map(i => `
+              <tr>
+                <td><a href="/device.html?id=${i.device_id}" style="color:var(--primary);font-weight:600">${i.device_name || '—'}</a></td>
+                <td>${i.issue_type}</td>
+                <td><span class="badge badge-${i.priority}">${PRIORITY_LABEL[i.priority]}</span></td>
+                <td><span class="badge badge-${i.status}">${STATUS_LABEL[i.status]}</span></td>
+                <td>${formatDate(i.created_at)}</td>
+              </tr>`).join('');
+          }
         }
+
+        // Issue Detail Modal
+        const issueModal = document.getElementById('issue-modal');
+        const issueModalBody = document.getElementById('issue-modal-body');
+
+        window.openIssueDetail = async (idx) => {
+          const i = myAssignedIssues[idx];
+          if (!i) return;
+          // Fetch full details if not already loaded
+          let detail = i;
+          try {
+            const full = await apiGet(`/api/issues/${i.id}`);
+            if (full.issue) detail = full.issue;
+          } catch(e) { console.error('Failed to load full issue details', e); }
+
+          currentIssueId = detail.id;
+          issueModalBody.innerHTML = `
+            <div style="margin-bottom:1rem">
+              <label class="form-label" data-i18n="device">Device</label>
+              <div style="font-weight:600">${detail.device_name || '—'} ${detail.device_type ? '— ' + detail.device_type : ''}</div>
+            </div>
+            <div style="margin-bottom:1rem">
+              <label class="form-label" data-i18n="issueType">Issue Type</label>
+              <div>${detail.issue_type}</div>
+            </div>
+            <div style="margin-bottom:1rem">
+              <label class="form-label" data-i18n="description">Description</label>
+              <div style="background:#f8fafc;padding:.75rem;border-radius:8px;border:1px solid var(--border);line-height:1.7">${detail.description || '—'}</div>
+            </div>
+            <div style="margin-bottom:1rem">
+              <label class="form-label" data-i18n="status">Status</label>
+              <div><span class="badge badge-${detail.status}">${STATUS_LABEL[detail.status]}</span></div>
+            </div>
+            <div style="margin-bottom:1rem">
+              <label class="form-label" data-i18n="priority">Priority</label>
+              <div><span class="badge badge-${detail.priority}">${PRIORITY_LABEL[detail.priority]}</span></div>
+            </div>
+            <div style="margin-bottom:1rem">
+              <label class="form-label">Assigned Technician</label>
+              <div>${detail.assigned_to_name ? '<span class="badge badge-info"><i class="fas fa-user"></i> ' + detail.assigned_to_name + '</span>' : '<span class="badge badge-open">Unassigned</span>'}</div>
+            </div>
+            ${detail.resolution_notes ? `<div style="margin-bottom:1rem"><label class="form-label" data-i18n="resolutionNotes">Resolution Notes</label><div style="background:#f0fdf4;padding:.75rem;border-radius:8px;border:1px solid #bbf7d0;line-height:1.7">${detail.resolution_notes}</div></div>` : ''}
+            ${detail.ai_suggestions ? `<div style="margin-bottom:1rem"><label class="form-label"><i class="fas fa-robot" style="color:var(--primary)"></i> <span data-i18n="aiSuggestions">AI Suggestions</span></label><div style="background:#eff6ff;padding:.75rem;border-radius:8px;border:1px solid #bfdbfe;line-height:1.7;white-space:pre-wrap">${detail.ai_suggestions}</div></div>` : ''}
+            ${detail.image_path ? `<div style="margin-bottom:1rem"><label class="form-label" data-i18n="attachedImage">Attached Image</label><img src="${detail.image_path}" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" /></div>` : ''}
+            <div style="color:var(--text-muted);font-size:.85rem">
+              <div><span data-i18n="dateLabel">Date:</span> ${formatDate(detail.created_at)}</div>
+              ${detail.resolved_at ? `<div><span data-i18n="resolvedDateLabel">Resolved Date:</span> ${formatDate(detail.resolved_at)}</div>` : ''}
+              <div><span data-i18n="reporterLabel">Reporter:</span> ${detail.reporter_name || '—'}</div>
+              ${detail.resolver_name ? `<div><span data-i18n="technicianLabel">Resolved By:</span> ${detail.resolver_name}</div>` : ''}
+            </div>
+          `;
+          const updateBtn = document.getElementById('issue-modal-update-btn');
+          if (detail.status !== 'resolved' && user.role === 'technician') {
+            updateBtn.classList.remove('hidden');
+          } else {
+            updateBtn.classList.add('hidden');
+          }
+          issueModal.classList.remove('hidden');
+        };
+
+        document.getElementById('issue-modal-close').addEventListener('click', () => issueModal.classList.add('hidden'));
+        document.getElementById('issue-modal-close-btn').addEventListener('click', () => issueModal.classList.add('hidden'));
+
+        // Resolve Modal
+        const resolveModal = document.getElementById('resolve-modal');
+        let currentIssueId = null;
+
+        window.openResolveModal = (id) => {
+          currentIssueId = id;
+          document.getElementById('resolve-issue-id').value = id;
+          document.getElementById('resolve-status').value = 'resolved';
+          document.getElementById('resolve-notes').value = '';
+          resolveModal.classList.remove('hidden');
+        };
+
+        window.openResolveModalFromDetail = () => {
+          if (currentIssueId) {
+            issueModal.classList.add('hidden');
+            openResolveModal(currentIssueId);
+          }
+        };
+
+        window.quickUpdateStatus = async (id, status, oldStatus) => {
+          try {
+            await apiPatch(`/api/issues/${id}/status`, { status });
+            toast(t('statusUpdated'), 'success');
+            load();
+          } catch(e) { toast(e.message, 'error'); }
+        };
+
+        document.getElementById('resolve-modal-close').addEventListener('click', () => resolveModal.classList.add('hidden'));
+        document.getElementById('resolve-modal-cancel').addEventListener('click', () => resolveModal.classList.add('hidden'));
+        document.getElementById('resolve-save').addEventListener('click', async () => {
+          const id = document.getElementById('resolve-issue-id').value;
+          const status = document.getElementById('resolve-status').value;
+          const notes = document.getElementById('resolve-notes').value;
+          try {
+            await apiPatch(`/api/issues/${id}/status`, { status, resolution_notes: notes });
+            resolveModal.classList.add('hidden');
+            toast(t('statusUpdated'), 'success');
+            load();
+          } catch(e) { toast(e.message, 'error'); }
+        });
 
         // Alerts
         const alertRes = await apiGet('/api/alerts?is_read=0');

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="maintenanceCalendar">Maintenance Calendar — Smart Lab</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .lang-switch-top { background: transparent; border: 1px solid var(--border); color: var(--text); padding: .35rem .85rem; border-radius: 8px; cursor: pointer; font-family: 'Cairo', sans-serif; font-size: .85rem; }
+    .lang-switch-top:hover { background: var(--sidebar-bg); color: #fff; }
+    .dark-mode-btn { background: transparent; border: 1px solid var(--border); color: var(--text); padding: .35rem .85rem; border-radius: 8px; cursor: pointer; font-size: .85rem; margin-left: .5rem; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: .5rem; }
+    .calendar-day { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .75rem; min-height: 100px; position: relative; }
+    .calendar-day .day-num { font-weight: 700; color: var(--text-muted); font-size: .85rem; margin-bottom: .5rem; }
+    .calendar-day.today { background: #eff6ff; border-color: #3B82F6; }
+    .calendar-day.today .day-num { color: #3B82F6; font-size: 1rem; }
+    .calendar-event { font-size: .75rem; padding: .3rem .5rem; border-radius: 6px; margin-bottom: .3rem; cursor: pointer; font-weight: 500; border-left: 3px solid; }
+    .calendar-event.scheduled { background: #DBEAFE; color: #1E40AF; border-left-color: #3B82F6; }
+    .calendar-event.in_progress { background: #FEF3C7; color: #92400E; border-left-color: #F59E0B; }
+    .calendar-event.completed { background: #D1FAE5; color: #065F46; border-left-color: #10B981; }
+    .calendar-event.cancelled { background: #F3F4F6; color: #4B5563; border-left-color: #9CA3AF; text-decoration: line-through; }
+    .calendar-event .event-title { font-weight: 600; }
+    .calendar-event .event-meta { font-size: .65rem; opacity: .8; }
+    .calendar-event.my-task { box-shadow: 0 0 0 2px #3B82F6; }
+    .calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: .5rem; margin-bottom: .5rem; }
+    .calendar-header div { text-align: center; font-weight: 600; color: var(--text-muted); font-size: .85rem; padding: .5rem; }
+    .month-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: .75rem 1rem; background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border); }
+    .month-nav h3 { margin: 0; font-size: 1.25rem; color: var(--text); }
+    .task-list { margin-top: 1rem; }
+    .task-card { display: flex; align-items: center; gap: 1rem; padding: .75rem 1rem; border-radius: var(--radius-sm); background: var(--card-bg); border: 1px solid var(--border); margin-bottom: .5rem; transition: .2s; }
+    .task-card:hover { background: var(--sidebar-bg); color: #fff; }
+    .task-card .task-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .task-card .task-icon.scheduled { background: #DBEAFE; color: #1E40AF; }
+    .task-card .task-icon.in_progress { background: #FEF3C7; color: #92400E; }
+    .task-card .task-icon.completed { background: #D1FAE5; color: #065F46; }
+    .task-card .task-info { flex: 1; }
+    .task-card .task-title { font-weight: 600; font-size: .9rem; }
+    .task-card .task-date { font-size: .8rem; color: var(--text-muted); }
+    .task-card .task-status { font-size: .75rem; padding: .2rem .5rem; border-radius: 4px; }
+    .legend-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; font-size: .8rem; }
+    .legend-bar .legend-item { display: flex; align-items: center; gap: .4rem; }
+    .legend-bar .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+    .weekend-day { background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-laptop-code"></i><span>Smart Lab</span></div>
+    <nav class="sidebar-nav">
+      <a href="/dashboard.html"    class="nav-item" data-page="dashboard.html"   data-roles="admin,technician"><i class="fas fa-gauge-high"></i>    <span data-i18n="dashboard">Dashboard</span></a>
+      <a href="/devices.html"      class="nav-item" data-page="devices.html"     data-roles="admin,technician"><i class="fas fa-desktop"></i>       <span data-i18n="devices">Devices</span></a>
+      <a href="/issues.html"       class="nav-item" data-page="issues.html"      data-roles="admin,technician,user"><i class="fas fa-triangle-exclamation"></i> <span data-i18n="issues">My Issues</span></a>
+      <a href="/maintenance.html"  class="nav-item" data-page="maintenance.html" data-roles="admin,technician"><i class="fas fa-screwdriver-wrench"></i> <span data-i18n="maintenance">Maintenance</span></a>
+      <a href="/map.html"          class="nav-item" data-page="map.html"         data-roles="admin,technician"><i class="fas fa-map"></i>           <span data-i18n="map">Map</span></a>
+      <a href="/alerts.html"       class="nav-item" data-page="alerts.html"      data-roles="admin,technician"><i class="fas fa-bell"></i>          <span data-i18n="alerts">Alerts</span></a>
+      <a href="/ai.html"           class="nav-item" data-page="ai.html"          data-roles="admin,technician,user"><i class="fas fa-robot"></i>         <span data-i18n="aiAssistant">AI Assistant</span></a>
+      <a href="/reports.html"      class="nav-item" data-page="reports.html"     data-roles="admin,technician"><i class="fas fa-chart-bar"></i>     <span data-i18n="reports">Reports</span></a>
+      <a href="/calendar.html"     class="nav-item active" data-page="calendar.html"    data-roles="admin,technician"><i class="fas fa-calendar-days"></i> <span data-i18n="maintenanceCalendar">Calendar</span></a>
+      <a href="/activity.html"     class="nav-item" data-page="activity.html"    data-roles="admin"><i class="fas fa-list-ul"></i> <span data-i18n="activityLog">Activity</span></a>
+      <a href="/admin.html"        class="nav-item" data-page="admin.html" id="admin-link" data-roles="admin"><i class="fas fa-users-cog"></i> <span data-i18n="users">Users</span></a>
+    </nav>
+    <div class="sidebar-footer">Smart Lab &copy; 2026</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-title" data-i18n="maintenanceCalendar">Maintenance Calendar</span>
+    <div class="topbar-actions">
+      <button class="dark-mode-btn" id="dark-mode-btn"><i class="fas fa-moon"></i></button>
+      <button class="lang-switch-top" id="lang-switcher" data-i18n="langBtn">English</button>
+      <div class="alert-bell" onclick="window.location='/alerts.html'"><i class="fas fa-bell"></i><span class="badge-count" id="unread-count" style="display:none">0</span></div>
+      <div class="topbar-user" id="user-menu"><div class="avatar" id="user-avatar">U</div><span id="user-name">User</span><i class="fas fa-chevron-down" style="font-size:.75rem;color:#94A3B8"></i></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="page-header" style="justify-content:space-between;align-items:center">
+      <h2 class="page-title" data-i18n="maintenanceCalendar">Maintenance Calendar</h2>
+      <button class="btn btn-primary btn-sm" id="add-btn" data-roles="admin"><i class="fas fa-plus"></i> <span data-i18n="scheduleMaintenance">Schedule</span></button>
+    </div>
+
+    <div class="legend-bar">
+      <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div><span>Scheduled</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div><span>In Progress</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10B981"></div><span>Completed</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#9CA3AF"></div><span>Cancelled</span></div>
+      <div class="legend-item" id="my-task-legend" style="display:none"><div class="legend-dot" style="background:#3B82F6;border:2px solid #3B82F6"></div><span>My Task</span></div>
+    </div>
+
+    <div class="month-nav">
+      <button class="btn btn-outline btn-sm" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+      <h3 id="month-label">—</h3>
+      <button class="btn btn-outline btn-sm" id="next-month"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <div class="calendar-header">
+      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
+    <div class="calendar-grid" id="calendar-grid"></div>
+
+    <!-- My Tasks (Technician only) -->
+    <div class="card" id="my-tasks-card" style="display:none;margin-top:1.5rem">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-user-check" style="color:var(--primary)"></i> <span data-i18n="myTasks">My Tasks</span></span>
+        <span class="badge badge-info" id="my-tasks-count">0</span>
+      </div>
+      <div class="task-list" id="my-tasks-list"></div>
+    </div>
+  </main>
+
+  <!-- Add Modal -->
+  <div class="modal-overlay" id="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header"><h3 id="modal-title" data-i18n="scheduleMaintenance">Schedule Maintenance</h3><button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body">
+        <div class="form-group"><label data-i18n="eventTitle">Title *</label><input type="text" id="m-title" class="form-control" /></div>
+        <div class="form-group"><label data-i18n="device">Device</label><select id="m-device" class="form-control"><option value="">—</option></select></div>
+        <div class="form-group"><label data-i18n="scheduledDate">Scheduled Date *</label><input type="datetime-local" id="m-scheduled" class="form-control" /></div>
+        <div class="form-group"><label data-i18n="assignedTechnician">Technician</label><select id="m-tech" class="form-control"><option value="">—</option></select></div>
+        <div class="form-group"><label data-i18n="description">Description</label><textarea id="m-desc" class="form-control" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="modal-cancel" data-i18n="cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-save" data-i18n="save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Detail Modal -->
+  <div class="modal-overlay" id="event-modal-overlay" style="display:none">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header"><h3 id="event-modal-title">Task Details</h3><button class="modal-close" id="event-modal-close"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body" id="event-modal-body"></div>
+      <div class="modal-footer" id="event-modal-footer">
+        <button class="btn btn-outline" id="event-modal-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireAuth, apiGet, apiPost, apiPut, apiDel, fillTopbar, setActiveNav, logout, toast, filterSidebar, initDarkMode, toggleDarkMode } from '/js/api.js';
+    import { setLanguage, getLang, t, applyTranslations } from '/js/i18n.js';
+
+    const user = requireAuth();
+    if (!user) throw new Error('stop');
+    fillTopbar();
+    setActiveNav();
+    applyTranslations();
+    filterSidebar();
+    initDarkMode();
+
+    const isAdmin = user.role === 'admin';
+    const isTech = user.role === 'technician';
+
+    document.getElementById('lang-switcher').addEventListener('click', () => { setLanguage(getLang() === 'ar' ? 'en' : 'ar'); });
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('dark-mode-btn').addEventListener('click', toggleDarkMode);
+
+    let currentDate = new Date();
+    let schedules = [];
+
+    async function loadDevices() {
+      const data = await apiGet('/api/devices?limit=100');
+      const sel = document.getElementById('m-device');
+      data.devices.forEach(d => { sel.innerHTML += `<option value="${d.id}">${d.name}</option>`; });
+    }
+    async function loadTechnicians() {
+      const data = await apiGet('/api/users');
+      const sel = document.getElementById('m-tech');
+      data.users.filter(u => u.role === 'technician').forEach(u => { sel.innerHTML += `<option value="${u.id}">${u.name}</option>`; });
+    }
+
+    async function loadSchedules() {
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const from = `${year}-${month}-01`;
+      const to = `${year}-${month}-31`;
+      const data = await apiGet(`/api/calendar?from=${from}&to=${to}&limit=100`);
+      schedules = data.schedules || [];
+      renderCalendar();
+      if (isTech) renderMyTasks();
+    }
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDay = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('month-label').textContent = `${monthNames[month]} ${year}`;
+
+      const today = new Date();
+      const isToday = (d) => today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < startDay; i++) grid.innerHTML += '<div class="calendar-day" style="background:transparent;border:none"></div>';
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayEvents = schedules.filter(s => s.scheduled_at.startsWith(dateStr));
+        const isWeekend = (startDay + day - 1) % 7 === 0 || (startDay + day - 1) % 7 === 6;
+        let eventsHtml = dayEvents.map(e => {
+          const cls = e.status;
+          const isMyTask = isTech && e.technician_id === user.id;
+          const myTaskClass = isMyTask ? ' my-task' : '';
+          return `<div class="calendar-event ${cls}${myTaskClass}" onclick="window._showEvent(${e.id})">
+            <div class="event-title">${e.title}</div>
+            <div class="event-meta">${e.technician_name || 'Unassigned'} ${e.device_name ? '· ' + e.device_name : ''}</div>
+          </div>`;
+        }).join('');
+        const todayClass = isToday(day) ? ' today' : '';
+        const weekendClass = isWeekend ? ' weekend-day' : '';
+        grid.innerHTML += `<div class="calendar-day${todayClass}${weekendClass}"><div class="day-num">${day}</div>${eventsHtml}</div>`;
+      }
+    }
+
+    function renderMyTasks() {
+      const mySchedules = schedules.filter(s => s.technician_id === user.id);
+      const card = document.getElementById('my-tasks-card');
+      const list = document.getElementById('my-tasks-list');
+      const count = document.getElementById('my-tasks-count');
+      const legend = document.getElementById('my-task-legend');
+
+      if (mySchedules.length > 0) {
+        card.style.display = 'block';
+        legend.style.display = 'flex';
+        count.textContent = mySchedules.length;
+        list.innerHTML = mySchedules.map(s => {
+          const date = new Date(s.scheduled_at);
+          const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const iconMap = { scheduled: 'fa-calendar', in_progress: 'fa-spinner', completed: 'fa-check', cancelled: 'fa-ban' };
+          return `
+            <div class="task-card" onclick="window._showEvent(${s.id})" style="cursor:pointer">
+              <div class="task-icon ${s.status}"><i class="fas ${iconMap[s.status] || 'fa-calendar'}"></i></div>
+              <div class="task-info">
+                <div class="task-title">${s.title}</div>
+                <div class="task-date">${dateStr} ${s.device_name ? '· ' + s.device_name : ''}</div>
+              </div>
+              <span class="badge badge-${s.status === 'in_progress' ? 'warning' : s.status === 'completed' ? 'success' : 'primary'}">${s.status}</span>
+            </div>
+          `;
+        }).join('');
+      } else {
+        card.style.display = 'none';
+        legend.style.display = 'none';
+      }
+    }
+
+    window._showEvent = async (id) => {
+      try {
+        const data = await apiGet(`/api/calendar/${id}`);
+        const s = data.schedule;
+        const isMyTask = isTech && s.technician_id === user.id;
+        const modal = document.getElementById('event-modal-overlay');
+        const body = document.getElementById('event-modal-body');
+        const footer = document.getElementById('event-modal-footer');
+        document.getElementById('event-modal-title').textContent = s.title;
+        body.innerHTML = `
+          <div style="margin-bottom:1rem">
+            <label class="form-label">Device</label>
+            <div>${s.device_name || '—'}</div>
+          </div>
+          <div style="margin-bottom:1rem">
+            <label class="form-label">Date</label>
+            <div>${new Date(s.scheduled_at).toLocaleString()}</div>
+          </div>
+          <div style="margin-bottom:1rem">
+            <label class="form-label">Status</label>
+            <div><span class="badge badge-${s.status}">${s.status}</span></div>
+          </div>
+          <div style="margin-bottom:1rem">
+            <label class="form-label">Technician</label>
+            <div>${s.technician_name || 'Unassigned'}</div>
+          </div>
+          ${s.description ? `<div style="margin-bottom:1rem"><label class="form-label">Description</label><div>${s.description}</div></div>` : ''}
+          ${isMyTask ? '<div style="background:#eff6ff;padding:.75rem;border-radius:8px;border:1px solid #bfdbfe"><i class="fas fa-info-circle" style="color:#3B82F6"></i> This task is assigned to you</div>' : ''}
+        `;
+        // Show delete button only for admin
+        if (isAdmin) {
+          footer.innerHTML = `
+            <button class="btn btn-outline" id="event-modal-close-btn">Close</button>
+            <button class="btn btn-danger" id="event-modal-delete" onclick="window._deleteEvent(${s.id})"><i class="fas fa-trash"></i> Delete</button>
+          `;
+        } else {
+          footer.innerHTML = '<button class="btn btn-outline" id="event-modal-close-btn">Close</button>';
+        }
+        document.getElementById('event-modal-close-btn').addEventListener('click', () => modal.style.display = 'none');
+        modal.style.display = 'flex';
+      } catch (err) { toast(err.message, 'error'); }
+    };
+
+    window._deleteEvent = async (id) => {
+      if (!confirm('Are you sure you want to delete this schedule?')) return;
+      try {
+        await apiDel(`/api/calendar/${id}`);
+        toast('Schedule deleted', 'success');
+        document.getElementById('event-modal-overlay').style.display = 'none';
+        loadSchedules();
+      } catch (err) { toast(err.message, 'error'); }
+    };
+
+    document.getElementById('prev-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); loadSchedules(); });
+    document.getElementById('next-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); loadSchedules(); });
+
+    // Show add button only for admin
+    if (!isAdmin) {
+      document.getElementById('add-btn').style.display = 'none';
+    }
+
+    document.getElementById('add-btn').addEventListener('click', () => { document.getElementById('modal-overlay').style.display = 'flex'; });
+    document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal-overlay').style.display = 'none');
+    document.getElementById('modal-cancel').addEventListener('click', () => document.getElementById('modal-overlay').style.display = 'none');
+    document.getElementById('modal-save').addEventListener('click', async () => {
+      const payload = {
+        title: document.getElementById('m-title').value,
+        device_id: document.getElementById('m-device').value || null,
+        scheduled_at: document.getElementById('m-scheduled').value,
+        technician_id: document.getElementById('m-tech').value || null,
+        description: document.getElementById('m-desc').value || null,
+      };
+      if (!payload.title || !payload.scheduled_at) { toast(t('pleaseEnterDescription'), 'error'); return; }
+      try {
+        await apiPost('/api/calendar', payload);
+        toast(t('eventAdded'), 'success');
+        document.getElementById('modal-overlay').style.display = 'none';
+        // Reset form
+        document.getElementById('m-title').value = '';
+        document.getElementById('m-scheduled').value = '';
+        document.getElementById('m-desc').value = '';
+        loadSchedules();
+      } catch (err) { toast(err.message, 'error'); }
+    });
+
+    document.getElementById('event-modal-close').addEventListener('click', () => {
+      document.getElementById('event-modal-overlay').style.display = 'none';
+    });
+
+    loadDevices();
+    loadTechnicians();
+    loadSchedules();
+  </script>
+</body>
+</html>
