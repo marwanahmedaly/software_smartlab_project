@@ -62,11 +62,13 @@ AI skill system with structured workflows for each SDLC phase:
 - **Context7 MCP:** Real-time documentation queries for 8+ libraries
 
 ### Key Metrics
+_Reported by the team during the course; these figures were not independently re-verified._
+
 - **10 days** — Total development time
-- **33 commits** — Structured repository history
+- **33+ commits** — Structured repository history
 - **96 Jira issues** — Complete project tracking
 - **15 Superpowers skills** — Across all SDLC phases
-- **7 test suites** — All passing
+- **7 test suites** — 144 test cases (Jest + Supertest)
 - **87% ML accuracy** — On synthetic test data
 
 ---
@@ -78,8 +80,8 @@ AI skill system with structured workflows for each SDLC phase:
 | Backend | Node.js + Express |
 | Frontend | HTML + CSS + JavaScript (Vanilla) |
 | Database | SQLite (better-sqlite3) |
-| AI Diagnostics | Ollama (local LLM) + OpenRouter API |
-| ML/Analytics | Python + scikit-learn (RandomForestRegressor) |
+| AI Diagnostics | Ollama (local LLM); an OpenRouter client is included but not enabled |
+| ML/Analytics | Python + scikit-learn (RandomForestClassifier) |
 | QR Code | qrcode (npm) |
 | Charts | Chart.js |
 | Authentication | JWT (jsonwebtoken + bcryptjs) |
@@ -98,7 +100,7 @@ AI skill system with structured workflows for each SDLC phase:
 - 🌍 **Bilingual Interface** — Full Arabic/English support with custom i18n engine, RTL layouts, and language persistence
 - 🚨 **Issue Reporting** — Submit fault reports with optional image upload; AI suggests fixes in real-time (debounced)
 - 🤖 **AI Diagnostics** — Local Ollama LLM integration for privacy-preserving fault diagnosis based on description and device specs
-- 🔮 **ML Predictive Maintenance** — scikit-learn RandomForestRegressor predicts device failure risk using age, fault frequency, and maintenance gaps
+- 🔮 **ML Predictive Maintenance** — scikit-learn RandomForestClassifier predicts device failure risk using age, fault frequency, and maintenance gaps
 - 🗺 **Interactive Lab Map** — SVG layout of the lab; each device node is color-coded by status; click to navigate to device details
 - 🔔 **Smart Alerts** — Daily cron job generates proactive alerts:
   - Device age > 5 years → `medium` severity
@@ -142,7 +144,7 @@ smartlab/
 │   ├── deepseek.js            ← OpenRouter API wrapper
 │   ├── ollama.js              ← Local Ollama LLM integration
 │   ├── ml_bridge.js           ← Python bridge for scikit-learn
-│   ├── ml_predictor.py        ← RandomForestRegressor training + prediction
+│   ├── ml_predictor.py        ← RandomForestClassifier training + prediction
 │   └── predictive.js          ← Daily cron job for proactive alerts
 ├── ml/
 │   └── model.joblib           ← Trained ML model (auto-generated)
@@ -295,15 +297,14 @@ smartlab/
 ### AI
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| POST | `/api/ai/diagnose` | Ollama/OpenRouter fault diagnosis | Admin / Technician |
-| POST | `/api/ai/chat` | Interactive AI chat with device context | Admin / Technician |
+| POST | `/api/ai/diagnose` | Local Ollama fault diagnosis from a description, device type and the last 3 resolved issues | All logged-in roles |
+| GET | `/api/ai/health` | Check that Ollama is running and the model is available | Public |
 
 ### ML (Predictive Maintenance)
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| POST | `/api/ml/predict` | Predict failure risk for a device | Admin / Technician |
-| GET | `/api/ml/insights` | ML feature importance and model stats | Admin / Technician |
-| POST | `/api/ml/train` | Retrain model with current data | Admin |
+| GET | `/api/alerts/predictions` | List devices with predicted failure risk (score 30 or higher) | Admin / Technician |
+| POST | `/api/alerts/predictions/run` | Run the prediction check now and create alerts | Admin / Technician |
 
 ### Users (Admin)
 | Method | Endpoint | Description | Access |
@@ -350,7 +351,7 @@ npm install
 
 # Copy environment variables
 cp .env.example .env
-# Edit .env and add your JWT_SECRET and DEEPSEEK_API_KEY
+# Edit .env and set JWT_SECRET (and OLLAMA_URL / OLLAMA_MODEL if they differ from the defaults)
 
 # Seed the database with sample data
 npm run seed
@@ -379,7 +380,7 @@ cd software_smartlab_project
 
 # 2. Create environment file
 cp .env.example .env
-# Edit .env and add your OPENROUTER_API_KEY
+# Edit .env and set JWT_SECRET (Ollama must be running on the host for AI diagnostics)
 
 # 3. Build and start
 docker-compose up --build -d
@@ -439,7 +440,7 @@ JWT_SECRET=your_jwt_secret_here
 OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2
 
-# AI Diagnostics (OpenRouter - Cloud Fallback)
+# AI Diagnostics (OpenRouter client - included but not enabled by default)
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=meta-llama/llama-3.2-3b-instruct:free
 OPENROUTER_URL=https://openrouter.ai/api/v1/chat/completions
@@ -509,34 +510,45 @@ The system includes a custom 200-line i18n engine:
 
 ### AI Diagnostics (Ollama)
 - **Local LLM:** Runs on Ollama — institutional data never leaves the network
-- **Context-Aware:** Pre-loaded with device specs and fault history
-- **Interactive Chat:** Technicians can ask follow-up questions
-- **Privacy:** No API costs, no data leakage, 10-second response time
+- **Context-Aware:** Each request includes the device name and type and its last 3 resolved issues
+- **Privacy:** No API costs and no data leaves your network; response time depends on your hardware and model
 
 ### ML Predictive Maintenance
-- **Algorithm:** RandomForestRegressor (scikit-learn)
-- **Features:** Device age, failure frequency, maintenance gaps
-- **Output:** Failure risk score + feature importance
+- **Algorithm:** RandomForestClassifier (scikit-learn)
+- **Features:** Device age, days since maintenance, issues in the last 3 and 6 months, average fix time, current status
+- **Output:** Failure risk score and probability; alerts are created for medium risk and above (score 30 or higher). A daily 8 AM job and a run on server start check every device
+- **Training data:** 5,000 synthetic rows (`services/smartlab_training.csv`); the trained model and scaler are committed as `.pkl` files
 - **Model Persistence:** joblib for fast loading
-- **Accuracy:** 87% on synthetic test data
+- **Accuracy:** 87% on synthetic test data (not validated on real lab data)
 
 ---
 
 ## 🧪 Testing
 
-7 comprehensive test suites:
+7 test suites (144 test cases):
 - **Auth:** JWT verification, role guards, token expiration
 - **Devices:** CRUD operations, QR generation, validation
 - **Issues:** Reporting, status updates, image uploads
 - **Alerts:** Smart alert generation, marking as read
-- **AI:** Ollama/OpenRouter integration, response formatting
+- **AI:** Ollama diagnosis route and validation
 - **Reports:** Date filtering, chart data, KPI calculations
-- **Integration:** End-to-end workflows across modules
+- **Users:** Admin user management and role checks
 
 Run tests:
 ```bash
 npm test
 ```
+
+---
+
+## Additional notes
+
+- **API docs:** OpenAPI/Swagger UI at `/api/docs`. Routes are versioned under `/api/v1` with legacy `/api` aliases.
+- **Rate limits:** 10 login attempts per 15 minutes and 5 AI requests per minute.
+- **Audit log:** an audit middleware records user, action, entity, IP address and request details.
+- **Alerts:** besides the ML model, rule alerts fire for devices older than 5 years, 3 or more faults in a month, and more than 6 months without maintenance.
+- **Real-time:** the server exposes Socket.IO; the browser helper currently opens a plain WebSocket, so live alerts need a client update.
+- **Demo data:** the credentials above are created by the seed script and are for demonstration only. Change them before any real use.
 
 ---
 
